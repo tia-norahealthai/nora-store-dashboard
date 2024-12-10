@@ -53,13 +53,16 @@ const data = {
   navMain: [
     {
       title: "Analytics",
-      url: "#",
+      url: "/",
       icon: SquareTerminal,
-      isActive: true,
       items: [
         {
+          title: "Dashboard",
+          url: "/",
+        },
+        {
           title: "Orders",
-          url: "#",
+          url: "/orders",
         },
         {
           title: "Teams",
