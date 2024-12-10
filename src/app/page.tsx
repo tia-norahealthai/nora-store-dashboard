@@ -7,12 +7,16 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { MetricCard } from "@/components/ui/metric-card"
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { BarChart3, Users, DollarSign, ArrowUpRight } from "lucide-react"
+import { RecentOrders } from "@/components/recent-orders"
+import { TopCustomers } from "@/components/top-customers"
 
 export default function Page() {
   return (
@@ -40,11 +44,35 @@ export default function Page() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
+            <MetricCard
+              title="Total Revenue"
+              value="$45,231.89"
+              description="Monthly revenue"
+              icon={DollarSign}
+              trend="up"
+              trendValue="+20.1% from last month"
+            />
+            <MetricCard
+              title="Active Users"
+              value="2,350"
+              description="Active users this month"
+              icon={Users}
+              trend="down"
+              trendValue="-4% from last month"
+            />
+            <MetricCard
+              title="Conversion Rate"
+              value="3.2%"
+              description="Average conversion rate"
+              icon={BarChart3}
+              trend="up"
+              trendValue="+2.4% from last month"
+            />
           </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <RecentOrders />
+            <TopCustomers />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
