@@ -1,3 +1,6 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import {
   Table,
@@ -133,6 +136,12 @@ const recentOrders = [
 ]
 
 export function RecentOrders() {
+  const router = useRouter()
+
+  const handleViewDetails = (orderId: string) => {
+    router.push(`/orders/${orderId}`)
+  }
+
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex items-center justify-between p-6">
@@ -150,7 +159,11 @@ export function RecentOrders() {
         </TableHeader>
         <TableBody>
           {recentOrders.map((order) => (
-            <TableRow key={order.id}>
+            <TableRow 
+              key={order.id}
+              className="cursor-pointer"
+              onClick={() => handleViewDetails(order.id)}
+            >
               <TableCell className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <span className="text-xs">{order.customer.avatar}</span>

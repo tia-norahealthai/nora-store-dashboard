@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreHorizontal, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 type Order = {
   id: string
@@ -229,6 +230,7 @@ const mockOrders: Order[] = [
 ]
 
 export function OrdersTable() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -241,6 +243,10 @@ export function OrdersTable() {
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleViewDetails = (orderId: string) => {
+    router.push(`/orders/${orderId}`)
+  }
 
   return (
     <div className="rounded-xl border bg-card">
@@ -273,7 +279,11 @@ export function OrdersTable() {
         </TableHeader>
         <TableBody>
           {paginatedOrders.map((order) => (
-            <TableRow key={order.id}>
+            <TableRow 
+              key={order.id}
+              className="cursor-pointer"
+              onClick={() => handleViewDetails(order.id)}
+            >
               <TableCell className="font-medium">{order.orderNumber}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
@@ -305,16 +315,32 @@ export function OrdersTable() {
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>View details</DropdownMenuItem>
-                    <DropdownMenuItem>Update status</DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewDetails(order.id)
+                    }}>
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      Update status
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">Cancel order</DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-red-600"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Cancel order
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
