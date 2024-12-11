@@ -92,6 +92,7 @@ const categories = ["All", "Pizza", "Main Course", "Salads", "Specials"]
 const dietaryFilters = ["vegetarian", "vegan", "gluten-free"]
 
 export function MenuItems() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedDietary, setSelectedDietary] = useState<string[]>([])
@@ -128,6 +129,10 @@ export function MenuItems() {
       default:
         return "default"
     }
+  }
+
+  const handleViewDetails = (id: string) => {
+    router.push(`/menu/${id}`)
   }
 
   return (
@@ -205,7 +210,11 @@ export function MenuItems() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {paginatedItems.map((item) => (
-          <Card key={item.id} className="overflow-hidden">
+          <Card 
+            key={item.id} 
+            className="overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => handleViewDetails(item.id)}
+          >
             {item.imageUrl && (
               <div className="aspect-video w-full overflow-hidden">
                 <img
@@ -220,16 +229,30 @@ export function MenuItems() {
                 <CardTitle className="text-lg">{item.name}</CardTitle>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>Edit item</DropdownMenuItem>
-                    <DropdownMenuItem>Update status</DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewDetails(item.id)
+                    }}>
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      Edit item
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem 
+                      className="text-red-600"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       Delete item
                     </DropdownMenuItem>
                   </DropdownMenuContent>
