@@ -11,8 +11,13 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { CustomersTable } from "@/components/customers-table"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { getCustomers } from "@/lib/data-collector"
 
-export default function CustomersPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function CustomersPage() {
+  const customers = await getCustomers()
+  
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -35,7 +40,7 @@ export default function CustomersPage() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <CustomersTable />
+          <CustomersTable initialData={customers} />
         </div>
       </SidebarInset>
       <ChatSidebar />

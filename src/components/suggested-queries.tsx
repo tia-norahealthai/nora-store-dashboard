@@ -2,9 +2,10 @@ import { usePathname } from "next/navigation"
 import { SuggestedQuery } from "./suggested-query"
 import { SUGGESTED_QUERIES } from "@/config/suggested-queries"
 import { CONTEXTUAL_QUERIES } from "@/config/contextual-queries"
+import { Button } from "@/components/ui/button"
 
 interface SuggestedQueriesProps {
-  onQuerySelect: (prompt: string) => void
+  onQuerySelect: (query: string) => void
 }
 
 export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
@@ -26,15 +27,33 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
     return CONTEXTUAL_QUERIES[basePath as keyof typeof CONTEXTUAL_QUERIES] || SUGGESTED_QUERIES
   }
 
+  const queries = [
+    {
+      title: "Add Menu Item",
+      query: `Create menu item with:
+- name: 'Margherita Pizza'
+- price: 12.99
+- category: 'Pizza'
+- description: 'Classic Italian pizza with fresh tomatoes and mozzarella'`
+    },
+    // ... other queries
+  ]
+
   return (
-    <div className="flex flex-wrap gap-2 p-4">
-      {getContextualQueries().map((prompt) => (
-        <SuggestedQuery
-          key={prompt}
-          prompt={prompt}
-          onClick={() => onQuerySelect(prompt)}
-        />
-      ))}
+    <div className="grid gap-2">
+      <p className="text-sm text-muted-foreground">Suggested queries:</p>
+      <div className="flex flex-wrap gap-2">
+        {queries.map((item) => (
+          <Button
+            key={item.title}
+            variant="outline"
+            size="sm"
+            onClick={() => onQuerySelect(item.query)}
+          >
+            {item.title}
+          </Button>
+        ))}
+      </div>
     </div>
   )
 } 

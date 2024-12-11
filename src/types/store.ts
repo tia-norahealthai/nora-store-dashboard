@@ -1,65 +1,55 @@
-import { CustomersSlice } from '@/store/slices/customersSlice'
-import { MenuSlice } from '@/store/slices/menuSlice'
-import { OrdersSlice } from '@/store/slices/ordersSlice'
-
 export interface MenuItem {
   id: string
   name: string
-  description: string
+  description?: string
   price: number
   category: string
-  status: 'available' | 'out_of_stock'
-  dietary: string[]
-  allergens?: string[]
-  nutritionalInfo?: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-  }
-  imageUrl?: string;
+  image_url?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Customer {
   id: string
   name: string
   email: string
-  totalOrders: number
-  totalSpent: number
-  status: 'active' | 'inactive'
+  phone?: string
+  total_orders: number
+  total_spent: number
+  avatar_url?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Order {
   id: string
-  orderNumber: string
-  customerId: string
+  customer_id: string
   status: 'pending' | 'processing' | 'completed' | 'cancelled'
-  items: Array<{
-    menuItemId: string
-    quantity: number
-    price: number
-  }>
   total: number
-  date: string
+  items: OrderItem[]
+  payment_method?: string
+  created_at?: string
+  updated_at?: string
 }
 
-export interface StoreState {
-  menu: {
-    items: MenuItem[]
-    categories: string[]
-    isLoading: boolean
-    error: string | null
-  }
-  customers: {
-    list: Customer[]
-    isLoading: boolean
-    error: string | null
-  }
-  orders: {
-    list: Order[]
-    isLoading: boolean
-    error: string | null
-  }
+export interface OrderItem {
+  id: string
+  menu_item_id: string
+  quantity: number
+  price: number
+  notes?: string
 }
 
-export type RootState = StoreState & MenuSlice & CustomersSlice & OrdersSlice 
+interface MenuItem {
+  name: string
+  price: string
+  category: string
+  description: string
+}
+
+type MenuAction = {
+  type: 'ADD_MENU_ITEM'
+  payload: MenuItem
+}
+
+type Actions = MenuAction | /* your other action types */ 

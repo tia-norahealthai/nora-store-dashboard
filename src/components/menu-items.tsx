@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useMenu } from "@/hooks/use-menu"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   MoreHorizontal, 
   Search, 
@@ -21,136 +21,158 @@ import {
   Edit,
   Filter
 } from "lucide-react"
-import { MenuItem } from '@/types/store'
+import type { MenuItem } from '@/types/store'
 import Image from "next/image"
+import { useMariaContext } from "@/contexts/maria-context"
+import { AddMenuItemForm } from './add-menu-item-form'
 
-export function MenuItems() {
+const DEFAULT_IMAGE = "/file.svg"
+
+function getImageUrl(url: string | null): string {
+  if (!url) return DEFAULT_IMAGE;
+  
+  try {
+    if (url.includes('images.unsplash.com')) {
+      return url;
+    }
+    
+    if (url.includes('unsplash.com/photos/')) {
+      const photoId = url.split('/').pop()?.split('-')[0] || '';
+      return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
+    }
+    
+    return url;
+  } catch (error) {
+    console.error('Error processing image URL:', error);
+    return DEFAULT_IMAGE;
+  }
+}
+
+interface MenuItemsProps {
+  initialItems: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+    image_url: string;
+    status: string;
+    ingredients: string[];
+    nutritional_info: any;
+    preparation_time: number;
+  }[];
+}
+
+export function MenuItems({ initialItems }: MenuItemsProps) {
   const router = useRouter()
   const { menuItems, isLoading, fetchMenuItems, deleteMenuItem } = useMenu()
-  const [searchQuery, setSearchQuery] = useState("")
+  const { executeCommand } = useMariaContext()
 
   useEffect(() => {
     fetchMenuItems()
   }, [fetchMenuItems])
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
-      await deleteMenuItem(id)
-    }
-  }
-
-  const handleEdit = (id: string) => {
-    router.push(`/menu/${id}`)
-  }
-
-  const filteredItems = menuItems.filter((item: MenuItem) => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const getImageUrl = (imageUrl: string | undefined) => {
-    if (!imageUrl) return null;
-    
-    // If it's a local image (starts with /)
-    if (imageUrl.startsWith('/')) {
-      return imageUrl;
-    }
-    
-    // If it's a valid URL
     try {
-      new URL(imageUrl);
-      return imageUrl;
-    } catch {
-      // If it's not a valid URL, assume it's in the public folder
-      return `/${imageUrl}`;
+      await executeCommand('deleteMenuItem', { id })
+    } catch (error) {
+      console.error('Failed to delete menu item:', error)
     }
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin">Loading...</div>
-      </div>
-    )
+    return <div>Loading...</div>
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search menu items..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Button onClick={() => router.push("/menu/new")}>
-          <Plus className="mr-2 h-4 w-4" /> Add Item
-        </Button>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Menu Items</h2>
       </div>
+      <div className="grid gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex w-full max-w-sm items-center space-x-2">
+            <Input
+              placeholder="Search menu items..."
+              className="h-9"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="outline" className="h-9 w-9">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  Sort by name
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Sort by price
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Sort by category
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <AddMenuItemForm />
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((item: MenuItem) => (
-          <Card key={item.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{item.name}</CardTitle>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {menuItems.map((item) => (
+            <Card key={item.id} data-menu-item>
+              <CardHeader className="relative">
+                <div className="aspect-square overflow-hidden rounded-lg">
+                  <Image
+                    src={getImageUrl(item.image_url)}
+                    alt={item.name}
+                    className="object-cover"
+                    width={400}
+                    height={400}
+                  />
+                </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      className="absolute right-2 top-2 h-8 w-8 p-0"
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleEdit(item.id)}>
-                      <Edit className="mr-2 h-4 w-4" /> Edit
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => router.push(`/menu/${item.id}`)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      className="text-destructive"
+                      className="text-red-600"
                       onClick={() => handleDelete(item.id)}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
-                {item.imageUrl ? (
-                  <Image
-                    src={getImageUrl(item.imageUrl) || '/placeholder-food.jpg'}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <span className="text-muted-foreground">No image</span>
-                  </div>
-                )}
-              </div>
-              <p className="text-muted-foreground">{item.description}</p>
-              <div className="mt-4">
-                <Badge variant="secondary">${item.price}</Badge>
-                {item.category && (
-                  <Badge variant="outline" className="ml-2">
+              </CardHeader>
+              <CardContent>
+                <CardTitle className="line-clamp-1">{item.name}</CardTitle>
+                <div className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                  {item.description}
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <Badge variant="secondary" data-category>
                     {item.category}
                   </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredItems.length === 0 && (
-        <div className="text-center text-muted-foreground py-10">
-          No menu items found
+                  <span className="font-semibold">
+                    ${item.price.toFixed(2)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 } 

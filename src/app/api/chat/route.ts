@@ -1,94 +1,93 @@
-import OpenAI from 'openai';
-import { NextResponse } from 'next/server';
-import { handleMenuQuery } from '@/lib/menu-context-handler'
-import { PageContextData, PageType } from '@/types/data-types'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const FALLBACK_ENABLED = false; // Set to false in production
-
-function createSystemMessage(
-  pageType: PageType | string = 'dashboard', 
-  contextData: PageContextData[PageType] | null = null
-): string {
-  let systemMessage = `You are Maria, an AI assistant for a restaurant management system. 
-  You have access to real-time data about menu items, orders, customers, and business metrics.
-  
-  Current context type: ${pageType}`
-
-  if (contextData) {
-    switch (pageType) {
-      case 'menu_details': {
-        const { item } = contextData as PageContextData['menu_details']
-        systemMessage += `\n\nCurrent Menu Item Context:
-        - Name: ${item.name}
-        - Price: $${item.price}
-        - Category: ${item.category}
-        - Description: ${item.description}
-        - Dietary: ${item.dietary.join(', ')}
-        - Allergens: ${item.allergens?.join(', ') || 'None listed'}
-        - Status: ${item.status}
-        ${item.preparationTime ? `- Preparation Time: ${item.preparationTime}` : ''}
-        ${item.ingredients ? `- Ingredients: ${item.ingredients.join(', ')}` : ''}
-        ${item.nutritionalInfo ? `
-        - Nutritional Info:
-          * Calories: ${item.nutritionalInfo.calories}
-          * Protein: ${item.nutritionalInfo.protein}g
-          * Carbs: ${item.nutritionalInfo.carbs}g
-          * Fat: ${item.nutritionalInfo.fat}g` : ''}`
-        break
-      }
-
-      // Add other cases for different page types...
-    }
-  }
-
-  return systemMessage
-}
+import { NextResponse } from 'next/server'
+import { db } from '@/lib/supabase/db'
 
 export async function POST(request: Request) {
   try {
-    const { messages, context } = await request.json()
+    const body = await request.json()
+    const { messages, context } = body
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: createSystemMessage(context.type, context.data)
-        },
-        ...messages
-      ]
-    });
+    // Get the last user message
+    const lastMessage = messages[messages.length - 1]
+    const userMessage = lastMessage.content.toLowerCase()
 
-    const response = completion.choices[0].message.content || ''
-
-    // Check for command patterns in the response
-    const commandMatch = response.match(/\[COMMAND:(.*?)\](.*?)\[\/COMMAND\]/s)
-    
-    if (commandMatch) {
-      const [_, command, commandData] = commandMatch
+    // Check if it's a menu item creation request
+    if (userMessage.includes('create menu item') || userMessage.includes('add menu item')) {
       try {
-        const parsedData = JSON.parse(commandData)
+        const itemData = extractMenuItemData(lastMessage.content)
         
+        if (!itemData) {
+          return NextResponse.json({
+            content: "I couldn't understand the menu item details. Please provide the information in this format:\n\n" +
+              "Create menu item with:\n" +
+              "- name: 'Item Name'\n" +
+              "- price: 00.00\n" +
+              "- category: 'Category Name'\n" +
+              "- description: 'Item Description' (optional)"
+          })
+        }
+
+        // Create the menu item
+        const newItem = await db.menu.createItem({
+          name: itemData.name,
+          price: itemData.price,
+          category: itemData.category,
+          description: itemData.description || '',
+          status: 'active'
+        })
+
         return NextResponse.json({
-          content: response.replace(/\[COMMAND:.*?\].*?\[\/COMMAND\]/s, '').trim(),
-          command,
-          commandData: parsedData
+          content: `✅ Successfully created menu item: ${newItem.name}\n\nDetails:\n` +
+            `- Price: $${newItem.price}\n` +
+            `- Category: ${newItem.category}\n` +
+            (newItem.description ? `- Description: ${newItem.description}\n` : '')
         })
       } catch (error) {
-        console.error('Failed to parse command data:', error)
+        console.error('Error creating menu item:', error)
+        return NextResponse.json({
+          content: "Sorry, I couldn't create the menu item. Please try again or make sure all required information is provided correctly."
+        })
       }
     }
 
-    return NextResponse.json({ content: response })
+    // Handle other types of messages
+    return NextResponse.json({
+      content: "I understand you want to interact with the menu. What would you like to do?\n\n" +
+        "You can:\n" +
+        "1. Create a new menu item\n" +
+        "2. View existing menu items\n" +
+        "3. Update menu items\n" +
+        "4. Remove menu items\n\n" +
+        "To create a new item, use this format:\n" +
+        "Create menu item with:\n" +
+        "- name: 'Item Name'\n" +
+        "- price: 00.00\n" +
+        "- category: 'Category Name'\n" +
+        "- description: 'Item Description' (optional)"
+    })
+
   } catch (error) {
-    console.error('Chat API error:', error)
+    console.error('API error:', error)
     return NextResponse.json(
-      { error: 'Failed to process chat request' },
+      { error: 'Failed to process request' },
       { status: 500 }
     )
+  }
+}
+
+function extractMenuItemData(message: string) {
+  const nameMatch = message.match(/name:\s*['"]([^'"]+)['"]/)
+  const priceMatch = message.match(/price:\s*(\d+(\.\d{1,2})?)/)
+  const categoryMatch = message.match(/category:\s*['"]([^'"]+)['"]/)
+  const descriptionMatch = message.match(/description:\s*['"]([^'"]+)['"]/)
+
+  if (!nameMatch || !priceMatch || !categoryMatch) {
+    return null
+  }
+
+  return {
+    name: nameMatch[1],
+    price: parseFloat(priceMatch[1]),
+    category: categoryMatch[1],
+    description: descriptionMatch ? descriptionMatch[1] : ''
   }
 } 

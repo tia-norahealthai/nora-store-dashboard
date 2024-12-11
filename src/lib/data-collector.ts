@@ -1,4 +1,6 @@
 import { PageContextData, PageType } from '@/types/data-types'
+import { supabase } from '@/lib/supabase'
+import { fetchTableData } from './supabase-fetcher'
 
 function parseDataAttributes(element: Element): Record<string, any> {
   return Array.from(element.attributes)
@@ -103,4 +105,116 @@ export function collectPageData(type: PageType): PageContextData[PageType] | nul
     console.error('Error collecting page data:', error)
     return null
   }
+}
+
+// Add this function to test the connection
+async function testSupabaseConnection() {
+  try {
+    const { data, error } = await supabase.from('menu_items').select('count');
+    if (error) {
+      console.error('Supabase connection test error:', error);
+      return false;
+    }
+    console.log('Supabase connection successful:', data);
+    return true;
+  } catch (error) {
+    console.error('Supabase connection test failed:', error);
+    return false;
+  }
+}
+
+export async function getMenuItems() {
+  try {
+    const isConnected = await testSupabaseConnection();
+    if (!isConnected) {
+      throw new Error('Failed to connect to Supabase');
+    }
+
+    console.log('Fetching menu items...');
+    const { data: menuItems, error } = await supabase
+      .from('menu_items')
+      .select(`
+        id,
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        status,
+        ingredients,
+        nutritional_info,
+        preparation_time
+      `);
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    // Log the exact structure of the data
+    console.log('Menu items structure:', {
+      count: menuItems?.length,
+      firstItem: menuItems?.[0],
+    });
+    
+    return menuItems || [];
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    throw error;
+  }
+}
+
+export async function getCustomers() {
+  return fetchTableData('customers', `
+    id,
+    name,
+    email,
+    phone,
+    total_orders,
+    total_spent,
+    avatar_url,
+    allergens,
+    dietary_preference
+  `)
+}
+
+export async function getOrders() {
+  return fetchTableData('orders', `
+    id,
+    customer_id,
+    status,
+    total,
+    created_at,
+    items,
+    payment_method
+  `, {
+    orderBy: 'created_at.desc'
+  })
+}
+
+export async function getFeedbacks() {
+  return fetchTableData('feedbacks', `
+    id,
+    customer_id,
+    rating,
+    comment,
+    status,
+    created_at,
+    order_id
+  `, {
+    orderBy: 'created_at.desc'
+  })
+}
+
+export async function getInvoices() {
+  return fetchTableData('invoices', `
+    id,
+    invoice_number,
+    customer_id,
+    status,
+    amount,
+    created_at
+  `, {
+    orderBy: 'created_at.desc'
+  })
 } 

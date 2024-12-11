@@ -1,19 +1,12 @@
-import { configureStore } from '@reduxjs/toolkit'
-import menuReducer from './slices/menuSlice'
-import customersReducer from './slices/customersSlice'
-import ordersReducer from './slices/ordersSlice'
-import { useSelector, TypedUseSelectorHook } from 'react-redux'
+import { create } from 'zustand'
+import { createMenuSlice, MenuSlice } from './slices/menuSlice'
+import { createCustomersSlice, CustomersSlice } from './slices/customersSlice'
+import { createOrdersSlice, OrdersSlice } from './slices/ordersSlice'
 
-export const store = configureStore({
-  reducer: {
-    menu: menuReducer,
-    customers: customersReducer,
-    orders: ordersReducer
-  }
-})
+type StoreState = MenuSlice & CustomersSlice & OrdersSlice
 
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
-
-// Use TypedUseSelectorHook for proper typing
-export const useStore: TypedUseSelectorHook<RootState> = useSelector 
+export const useStore = create<StoreState>()((set) => ({
+  ...createMenuSlice(set),
+  ...createCustomersSlice(set),
+  ...createOrdersSlice(set)
+})) 

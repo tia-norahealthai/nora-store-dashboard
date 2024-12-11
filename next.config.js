@@ -4,19 +4,13 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.squarespace-cdn.com',
+        hostname: 'unsplash.com',
         port: '',
-        pathname: '/**',
+        pathname: '/photos/**',
       },
       {
         protocol: 'https',
-        hostname: '*.cloudinary.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.githubusercontent.com',
+        hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
       }

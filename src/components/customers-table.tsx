@@ -36,174 +36,37 @@ type Customer = {
   dietaryPreference: string
 }
 
-// This would typically come from your API/database
-const mockCustomers: Customer[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    email: "sarah.j@example.com",
-    phone: "+1 (555) 123-4567",
-    totalOrders: 48,
-    totalSpent: 2840.50,
-    avatarUrl: "/avatars/01.png",
-    allergens: ["Peanuts", "Shellfish"],
-    dietaryPreference: "Vegetarian"
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    email: "m.chen@example.com",
-    phone: "+1 (555) 234-5678",
-    totalOrders: 42,
-    totalSpent: 2650.75,
-    avatarUrl: "/avatars/02.png",
-    allergens: ["Lactose"],
-    dietaryPreference: "Non-vegetarian"
-  },
-  // Add more mock customers as needed
-]
-
-export function CustomersTable() {
+export function CustomersTable({ initialData }: { initialData: any[] }) {
+  const [customers, setCustomers] = useState(initialData)
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
 
-  const filteredCustomers = mockCustomers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + itemsPerPage)
-
-  const handleViewDetails = (customerId: string) => {
-    router.push(`/customers/${customerId}`)
-  }
-
+  // Add pagination and filtering logic here
+  
   return (
-    <div className="rounded-xl border bg-card">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Dietary Preferences</TableHead>
-              <TableHead>Orders</TableHead>
-              <TableHead className="text-right">Total Spent</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+    <div>
+      {/* ... existing table markup ... */}
+      <Table>
+        <TableHeader>
+          {/* ... */}
+        </TableHeader>
+        <TableBody>
+          {customers.map((customer) => (
+            <TableRow key={customer.id}>
+              <TableCell>
+                <Avatar>
+                  <AvatarImage src={customer.avatar_url} />
+                  <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </TableCell>
+              <TableCell>{customer.name}</TableCell>
+              <TableCell>{customer.email}</TableCell>
+              <TableCell>{customer.total_orders}</TableCell>
+              <TableCell>${customer.total_spent.toFixed(2)}</TableCell>
+              {/* ... other cells ... */}
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedCustomers.map((customer) => (
-              <TableRow
-                key={customer.id}
-                className="cursor-pointer"
-                onClick={() => handleViewDetails(customer.id)}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={customer.avatarUrl} alt={customer.name} />
-                      <AvatarFallback>
-                        {customer.name.split(" ").map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{customer.name}</span>
-                      <span className="text-xs text-muted-foreground">{customer.email}</span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm">{customer.phone}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <Utensils className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm">{customer.dietaryPreference}</span>
-                    </div>
-                    {customer.allergens.length > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <AlertCircle className="h-3.5 w-3.5 text-destructive" />
-                        <div className="flex gap-1">
-                          {customer.allergens.map((allergen) => (
-                            <Badge key={allergen} variant="outline" className="text-xs">
-                              {allergen}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{customer.totalOrders}</TableCell>
-                <TableCell className="text-right">${customer.totalSpent.toFixed(2)}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        handleViewDetails(customer.id)
-                      }}>
-                        View details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                        Edit customer
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Delete customer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-between px-6 py-4 border-t">
-        <div className="text-sm text-muted-foreground">
-          Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredCustomers.length)} of{" "}
-          {filteredCustomers.length} customers
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 } 

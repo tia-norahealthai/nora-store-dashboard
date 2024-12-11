@@ -11,7 +11,10 @@ export const CONTEXTUAL_QUERIES = {
     "What categories of food do we offer?",
     "Show me all available items",
     "Which items are currently out of stock?",
-    "List items by category"
+    "List items by category",
+    "Create a new menu item with name: 'Margherita Pizza', price: 12.99, category: 'Pizza', description: 'Classic Italian pizza with tomatoes and mozzarella'",
+    "Add a new dish to the menu",
+    "How do I add a new menu item?"
   ],
   "menu/[id]": [
     "What are the allergens in this dish?",

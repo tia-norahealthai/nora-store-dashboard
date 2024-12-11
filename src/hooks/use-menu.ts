@@ -1,26 +1,58 @@
 import { useCallback } from 'react'
-import { useAppDispatch, useAppSelector } from './redux'
-import { fetchMenuItems, deleteMenuItem } from '@/store/slices/menuSlice'
+import { useStore } from '@/store'
+import { db } from '@/lib/supabase/db'
+import type { MenuItem } from '@/types/store'
 
 export function useMenu() {
-  const dispatch = useAppDispatch()
-  const menuItems = useAppSelector((state) => state.menu.items)
-  const isLoading = useAppSelector((state) => state.menu.isLoading)
-  const error = useAppSelector((state) => state.menu.error)
+  const store = useStore()
+  
+  const menuItems = store.menu.items
+  const isLoading = store.menu.isLoading
+  const error = store.menu.error
 
-  const fetchItems = useCallback(() => {
-    dispatch(fetchMenuItems())
-  }, [dispatch])
+  const fetchMenuItems = useCallback(async () => {
+    try {
+      const items = await db.menu.getItems()
+      store.menu.setItems(items)
+    } catch (error) {
+      console.error('Failed to fetch menu items:', error)
+    }
+  }, [store.menu])
 
-  const deleteItem = useCallback((id: string) => {
-    dispatch(deleteMenuItem(id))
-  }, [dispatch])
+  const deleteMenuItem = useCallback(async (id: string) => {
+    try {
+      await db.menu.deleteItem(id)
+      store.menu.deleteItem(id)
+    } catch (error) {
+      console.error('Failed to delete menu item:', error)
+    }
+  }, [store.menu])
+
+  const updateMenuItem = useCallback(async (id: string, updates: Partial<MenuItem>) => {
+    try {
+      const updatedItem = await db.menu.updateItem(id, updates)
+      store.menu.updateItem(id, updatedItem)
+    } catch (error) {
+      console.error('Failed to update menu item:', error)
+    }
+  }, [store.menu])
+
+  const createMenuItem = useCallback(async (item: Omit<MenuItem, 'id'>) => {
+    try {
+      const newItem = await db.menu.createItem(item)
+      store.menu.addItem(newItem)
+    } catch (error) {
+      console.error('Failed to create menu item:', error)
+    }
+  }, [store.menu])
 
   return {
     menuItems,
     isLoading,
     error,
-    fetchMenuItems: fetchItems,
-    deleteMenuItem: deleteItem
+    fetchMenuItems,
+    deleteMenuItem,
+    updateMenuItem,
+    createMenuItem
   }
 } 
