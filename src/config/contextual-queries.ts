@@ -14,7 +14,11 @@ export const CONTEXTUAL_QUERIES = {
     "List items by category",
     "Create a new menu item with name: 'Margherita Pizza', price: 12.99, category: 'Pizza', description: 'Classic Italian pizza with tomatoes and mozzarella'",
     "Add a new dish to the menu",
-    "How do I add a new menu item?"
+    "How do I add a new menu item?",
+    "Update menu item with id: '123' to:\n- name: 'Supreme Pizza'\n- price: 15.99",
+    "Delete menu item with id: '123'",
+    "How do I update a menu item?",
+    "How do I delete a menu item?"
   ],
   "menu/[id]": [
     "What are the allergens in this dish?",

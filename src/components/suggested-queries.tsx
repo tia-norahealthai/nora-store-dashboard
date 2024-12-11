@@ -9,7 +9,7 @@ interface SuggestedQueriesProps {
 }
 
 export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
-  const pathname = usePathname()
+  const pathname = usePathname() || ""
   
   const getContextualQueries = () => {
     // Handle root path (dashboard)
@@ -36,7 +36,14 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
 - category: 'Pizza'
 - description: 'Classic Italian pizza with fresh tomatoes and mozzarella'`
     },
-    // ... other queries
+    {
+      title: "Update Menu Item",
+      query: "Update menu item"
+    },
+    {
+      title: "Delete Menu Item",
+      query: "Delete menu item"
+    }
   ]
 
   return (

@@ -42,6 +42,30 @@ export const db = {
       
       if (error) throw error
       return true
+    },
+
+    getItemsWithNutrition: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+        
+        if (error) {
+          console.error('Supabase error details:', error)
+          throw error
+        }
+        
+        if (!data) {
+          console.error('No data returned from Supabase')
+          return []
+        }
+        
+        console.log('Successfully fetched data:', data)
+        return data
+      } catch (err) {
+        console.error('Error in getItemsWithNutrition:', err)
+        throw err
+      }
     }
   },
   
