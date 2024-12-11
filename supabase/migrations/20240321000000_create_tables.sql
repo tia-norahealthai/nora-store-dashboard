@@ -1,16 +1,10 @@
 -- Create customers table
 CREATE TABLE IF NOT EXISTS customers (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
   phone TEXT,
-  total_orders INTEGER DEFAULT 0,
-  total_spent DECIMAL(10,2) DEFAULT 0,
-  avatar_url TEXT,
-  allergens TEXT[],
-  dietary_preference TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Create orders table
@@ -47,4 +41,9 @@ CREATE TABLE IF NOT EXISTS invoices (
   amount DECIMAL(10,2) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-); 
+);
+
+-- Add some sample data
+INSERT INTO customers (name, email, phone) VALUES
+  ('John Doe', 'john@example.com', '+1234567890'),
+  ('Jane Smith', 'jane@example.com', '+0987654321'); 

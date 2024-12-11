@@ -1,4 +1,5 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { notFound } from "next/navigation"
+import { getCustomerById } from "@/lib/data-collector"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,133 +9,32 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  AlertCircle, 
-  Utensils, 
-  DollarSign,
-  Coffee,
-  Pizza,
-  Wine,
-  Package
-} from "lucide-react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { useRouter } from "next/navigation"
-import { RecentOrders } from "@/components/recent-orders"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { Card } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { formatDate } from "@/lib/utils"
 
-// This would typically come from your API/database
-const customerDetails = {
-  id: "1",
-  name: "Sarah Johnson",
-  email: "sarah.j@example.com",
-  phone: "+1 (555) 123-4567",
-  address: "123 Main St, New York, NY 10001",
-  avatarUrl: "/avatars/01.png",
-  allergens: [
-    "Peanuts",
-    "Shellfish",
-    "Lactose"
-  ],
-  foodPreferences: {
-    diet: "Vegetarian",
-    spiceLevel: "Medium",
-    cuisinePreferences: ["Italian", "Indian", "Thai"],
-    dislikes: ["Mushrooms", "Olives"]
-  },
-  weeklyBudget: {
-    meals: 150.00,
-    snacks: 30.00,
-    drinks: 25.00
-  },
-  orders: [
-    {
-      id: "1",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        avatar: "SJ"
-      },
-      product: "Margherita Pizza, Garlic Bread",
-      status: "completed",
-      amount: "$35.50",
-      date: "2024-03-20T14:30:00Z"
-    },
-    {
-      id: "2",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        avatar: "SJ"
-      },
-      product: "Vegetable Curry, Naan Bread",
-      status: "completed",
-      amount: "$28.75",
-      date: "2024-03-15T18:45:00Z"
-    },
-    {
-      id: "3",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        avatar: "SJ"
-      },
-      product: "Caesar Salad, Iced Tea",
-      status: "cancelled",
-      amount: "$15.99",
-      date: "2024-03-10T12:15:00Z"
-    },
-    {
-      id: "4",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        avatar: "SJ"
-      },
-      product: "Pasta Carbonara, Tiramisu",
-      status: "completed",
-      amount: "$42.50",
-      date: "2024-03-05T19:30:00Z"
-    },
-    {
-      id: "5",
-      customer: {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        avatar: "SJ"
-      },
-      product: "Sushi Platter, Miso Soup",
-      status: "completed",
-      amount: "$55.25",
-      date: "2024-02-28T20:00:00Z"
-    }
-  ]
+export const dynamic = 'force-dynamic'
+
+interface PageProps {
+  params: Promise<{ id: string }> | { id: string }
 }
 
-export default function CustomerDetailsPage({ params }: { params: { id: string } }) {
+export default async function CustomerPage({ params }: PageProps) {
+  const resolvedParams = await params
+  const customer = await getCustomerById(resolvedParams.id)
+  
+  if (!customer) {
+    notFound()
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -149,167 +49,80 @@ export default function CustomerDetailsPage({ params }: { params: { id: string }
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{customerDetails.name}</BreadcrumbPage>
+                  <BreadcrumbPage>{customer.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
-
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Customer Header */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={customerDetails.avatarUrl} alt={customerDetails.name} />
-                <AvatarFallback>{customerDetails.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl font-bold">{customerDetails.name}</h1>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{customerDetails.email}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Customer Information</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Name</Label>
+                  <p className="text-lg font-medium">{customer.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Email</Label>
+                  <p className="text-lg">{customer.email}</p>
+                </div>
+                {customer.phone && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Phone</Label>
+                    <p className="text-lg">{customer.phone}</p>
+                  </div>
+                )}
+                {customer.address && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Address</Label>
+                    <p className="text-lg">{customer.address}</p>
+                  </div>
+                )}
+                {customer.dietary_preferences && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Dietary Preferences</Label>
+                    <p className="text-lg">{customer.dietary_preferences}</p>
+                  </div>
+                )}
+                {customer.allergens && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Allergens</Label>
+                    <p className="text-lg">{customer.allergens}</p>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-sm text-muted-foreground">Customer Since</Label>
+                  <p className="text-lg">{formatDate(customer.created_at)}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{customerDetails.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{customerDetails.address}</span>
-                </div>
-              </CardContent>
             </Card>
 
-            {/* Allergens */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5" />
-                  Allergens
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {customerDetails.allergens.map((allergen) => (
-                    <Badge key={allergen} variant="destructive">
-                      {allergen}
-                    </Badge>
+            <Card className="p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Order History</h2>
+              </div>
+              {customer.orders && customer.orders.length > 0 ? (
+                <div className="space-y-4">
+                  {customer.orders.map((order: any) => (
+                    <div key={order.id} className="border-b pb-2">
+                      <p className="font-medium">Order #{order.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(order.created_at)}
+                      </p>
+                      <p className="text-sm">
+                        Status: <span className="capitalize">{order.status}</span>
+                      </p>
+                    </div>
                   ))}
                 </div>
-              </CardContent>
+              ) : (
+                <p className="text-muted-foreground">No orders yet</p>
+              )}
             </Card>
-
-            {/* Food Preferences */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Utensils className="h-5 w-5" />
-                  Food Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h3 className="font-semibold">Dietary Preference</h3>
-                    <Badge variant="secondary" className="mt-2">
-                      {customerDetails.foodPreferences.diet}
-                    </Badge>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Spice Level</h3>
-                    <Badge variant="secondary" className="mt-2">
-                      {customerDetails.foodPreferences.spiceLevel}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-2">Preferred Cuisines</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {customerDetails.foodPreferences.cuisinePreferences.map((cuisine) => (
-                      <Badge key={cuisine} variant="outline">
-                        {cuisine}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2">Dislikes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {customerDetails.foodPreferences.dislikes.map((item) => (
-                      <Badge key={item} variant="secondary">
-                        {item}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Weekly Budget */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Weekly Budget
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <Pizza className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Meals</p>
-                      <p className="text-2xl font-bold">${customerDetails.weeklyBudget.meals}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <Coffee className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Snacks</p>
-                      <p className="text-2xl font-bold">${customerDetails.weeklyBudget.snacks}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <Wine className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Drinks</p>
-                      <p className="text-2xl font-bold">${customerDetails.weeklyBudget.drinks}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Replace CustomerOrdersTable with RecentOrders */}
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Order History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RecentOrders orders={customerDetails.orders} />
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </SidebarInset>

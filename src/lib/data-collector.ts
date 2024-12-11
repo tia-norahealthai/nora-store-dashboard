@@ -1,6 +1,8 @@
 import { PageContextData, PageType } from '@/types/data-types'
 import { supabase } from '@/lib/supabase'
 import { fetchTableData } from './supabase-fetcher'
+import { createClient } from '@/lib/supabase'
+import { Customer } from '@/lib/types'
 
 function parseDataAttributes(element: Element): Record<string, any> {
   return Array.from(element.attributes)
@@ -164,18 +166,23 @@ export async function getMenuItems() {
   }
 }
 
-export async function getCustomers() {
-  return fetchTableData('customers', `
-    id,
-    name,
-    email,
-    phone,
-    total_orders,
-    total_spent,
-    avatar_url,
-    allergens,
-    dietary_preference
-  `)
+export async function getCustomers(): Promise<Customer[]> {
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching customers:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Unexpected error fetching customers:', error)
+    return []
+  }
 }
 
 export async function getOrders() {
@@ -217,4 +224,22 @@ export async function getInvoices() {
   `, {
     orderBy: 'created_at.desc'
   })
+}
+
+export async function getCustomerById(id: string) {
+  const { data: customer, error } = await supabase
+    .from('customers')
+    .select(`
+      *,
+      orders:orders(*)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Error fetching customer:', error)
+    return null
+  }
+
+  return customer
 } 

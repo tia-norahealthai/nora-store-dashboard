@@ -29,11 +29,8 @@ interface MenuItemDataProps {
 }
 
 export function MenuItemData({ menuItem }: MenuItemDataProps) {
-  console.log('MenuItemData received:', menuItem)
-  
   return (
     <div className="space-y-4">
-      {/* Existing menu item info */}
       <Card>
         <CardHeader>
           <CardTitle>{menuItem.name}</CardTitle>
@@ -44,7 +41,6 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
         </CardContent>
       </Card>
 
-      {/* Nutrition card */}
       <Card>
         <CardHeader>
           <CardTitle>Nutritional Information</CardTitle>
@@ -58,36 +54,38 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell>Calories</TableCell>
-                <TableCell>{menuItem.calories ?? 'N/A'} kcal</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Protein</TableCell>
-                <TableCell>{menuItem.protein ?? 'N/A'}g</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Carbohydrates</TableCell>
-                <TableCell>{menuItem.carbohydrates ?? 'N/A'}g</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Fat</TableCell>
-                <TableCell>{menuItem.fat ?? 'N/A'}g</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Fiber</TableCell>
-                <TableCell>{menuItem.fiber ?? 'N/A'}g</TableCell>
-              </TableRow>
+              {menuItem.calories !== undefined && (
+                <TableRow>
+                  <TableCell>Calories</TableCell>
+                  <TableCell>{menuItem.calories} kcal</TableCell>
+                </TableRow>
+              )}
+              {menuItem.protein !== undefined && (
+                <TableRow>
+                  <TableCell>Protein</TableCell>
+                  <TableCell>{menuItem.protein}g</TableCell>
+                </TableRow>
+              )}
+              {menuItem.carbohydrates !== undefined && (
+                <TableRow>
+                  <TableCell>Carbohydrates</TableCell>
+                  <TableCell>{menuItem.carbohydrates}g</TableCell>
+                </TableRow>
+              )}
+              {menuItem.fat !== undefined && (
+                <TableRow>
+                  <TableCell>Fat</TableCell>
+                  <TableCell>{menuItem.fat}g</TableCell>
+                </TableRow>
+              )}
+              {menuItem.fiber !== undefined && (
+                <TableRow>
+                  <TableCell>Fiber</TableCell>
+                  <TableCell>{menuItem.fiber}g</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
-          
-          {/* Debug info - remove this in production */}
-          <div className="mt-4 p-4 bg-gray-100 rounded-md">
-            <p className="text-sm text-gray-500">Debug Info:</p>
-            <pre className="text-xs mt-2">
-              {JSON.stringify(menuItem, null, 2)}
-            </pre>
-          </div>
         </CardContent>
       </Card>
     </div>
