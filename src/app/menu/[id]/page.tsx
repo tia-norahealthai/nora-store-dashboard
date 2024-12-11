@@ -22,6 +22,7 @@ import {
   AlertCircle,
   ImageIcon
 } from "lucide-react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 // This would typically come from your API/database
 const menuItemDetails = {
@@ -50,7 +51,8 @@ const menuItemDetails = {
   },
   preparationTime: "15-20 minutes",
   popularity: "High",
-  reviews: 4.8
+  reviews: 4.8,
+  allergens: ["Dairy", "Gluten", "Wheat"],
 }
 
 export default function MenuItemDetailsPage({ params }: { params: { id: string } }) {
@@ -83,21 +85,33 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Menu Item Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{menuItemDetails.name}</h1>
-              <p className="text-muted-foreground">{menuItemDetails.description}</p>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-12 w-12">
+                {menuItemDetails.imageUrl ? (
+                  <AvatarImage src={menuItemDetails.imageUrl} alt={menuItemDetails.name} />
+                ) : (
+                  <AvatarFallback>
+                    <UtensilsCrossed className="h-6 w-6" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div>
+                <h1 className="text-2xl font-bold">{menuItemDetails.name}</h1>
+                <p className="text-muted-foreground">{menuItemDetails.description}</p>
+              </div>
             </div>
             <Badge variant={menuItemDetails.status === "available" ? "success" : "secondary"}>
               {menuItemDetails.status.replace("_", " ")}
             </Badge>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Image */}
-            <Card className="md:col-span-2">
-              <CardContent className="p-0">
+          {/* Bento Box Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
+            {/* Featured Image - Spans 2 columns and rows */}
+            <Card className="md:col-span-2 md:row-span-2">
+              <CardContent className="p-0 h-full">
                 {menuItemDetails.imageUrl ? (
-                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                  <div className="h-full w-full overflow-hidden rounded-lg">
                     <img
                       src={menuItemDetails.imageUrl}
                       alt={menuItemDetails.name}
@@ -105,50 +119,49 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                  <div className="flex h-full w-full items-center justify-center bg-muted">
                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-5 w-5" />
-                  Basic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category</span>
-                  <span className="font-medium">{menuItemDetails.category}</span>
+            {/* Price and Rating - Spans 2 columns */}
+            <Card className="md:col-span-2">
+              <CardContent className="flex items-center justify-between h-full">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Price</p>
+                  <p className="text-3xl font-bold">${menuItemDetails.price.toFixed(2)}</p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Price</span>
-                  <span className="font-medium">${menuItemDetails.price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Preparation Time</span>
-                  <span className="font-medium">{menuItemDetails.preparationTime}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Popularity</span>
-                  <span className="font-medium">{menuItemDetails.popularity}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rating</span>
-                  <span className="font-medium">{menuItemDetails.reviews} / 5.0</span>
+                <div className="space-y-1 text-right">
+                  <p className="text-sm text-muted-foreground">Rating</p>
+                  <p className="text-3xl font-bold">{menuItemDetails.reviews}</p>
+                  <p className="text-sm text-muted-foreground">/ 5.0</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Dietary Information */}
+            {/* Preparation Time */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5" />
+              <CardContent className="flex flex-col justify-center h-full space-y-1">
+                <p className="text-sm text-muted-foreground">Prep Time</p>
+                <p className="text-lg font-medium">{menuItemDetails.preparationTime}</p>
+              </CardContent>
+            </Card>
+
+            {/* Category */}
+            <Card>
+              <CardContent className="flex flex-col justify-center h-full space-y-1">
+                <p className="text-sm text-muted-foreground">Category</p>
+                <p className="text-lg font-medium">{menuItemDetails.category}</p>
+              </CardContent>
+            </Card>
+
+            {/* Dietary Information - Spans 2 columns */}
+            <Card className="md:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <AlertCircle className="h-4 w-4" />
                   Dietary Information
                 </CardTitle>
               </CardHeader>
@@ -163,16 +176,62 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
               </CardContent>
             </Card>
 
-            {/* Ingredients */}
+            {/* Allergens - Spans 2 columns */}
             <Card className="md:col-span-2">
-              <CardHeader>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <AlertCircle className="h-4 w-4" />
+                  Allergens
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {menuItemDetails.allergens.map((allergen) => (
+                    <Badge key={allergen} variant="destructive">
+                      {allergen}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Nutritional Info - Spans full width */}
+            <Card className="md:col-span-4">
+              <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
-                  <UtensilsCrossed className="h-5 w-5" />
+                  <DollarSign className="h-4 w-4" />
+                  Nutritional Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(menuItemDetails.nutritionalInfo).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-4 rounded-lg border p-4">
+                      <div>
+                        <p className="text-sm font-medium capitalize">{key}</p>
+                        <p className="text-2xl font-bold">
+                          {value}
+                          <span className="text-sm text-muted-foreground">
+                            {key === 'calories' ? ' kcal' : ' g'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Ingredients - Spans full width */}
+            <Card className="md:col-span-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <UtensilsCrossed className="h-4 w-4" />
                   Ingredients
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {menuItemDetails.ingredients.map((ingredient) => (
                     <div
                       key={ingredient}
@@ -181,56 +240,6 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
                       {ingredient}
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Nutritional Information */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Nutritional Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <div>
-                      <p className="text-sm font-medium">Calories</p>
-                      <p className="text-2xl font-bold">
-                        {menuItemDetails.nutritionalInfo.calories}
-                        <span className="text-sm text-muted-foreground"> kcal</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <div>
-                      <p className="text-sm font-medium">Protein</p>
-                      <p className="text-2xl font-bold">
-                        {menuItemDetails.nutritionalInfo.protein}
-                        <span className="text-sm text-muted-foreground"> g</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <div>
-                      <p className="text-sm font-medium">Carbs</p>
-                      <p className="text-2xl font-bold">
-                        {menuItemDetails.nutritionalInfo.carbs}
-                        <span className="text-sm text-muted-foreground"> g</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 rounded-lg border p-4">
-                    <div>
-                      <p className="text-sm font-medium">Fat</p>
-                      <p className="text-2xl font-bold">
-                        {menuItemDetails.nutritionalInfo.fat}
-                        <span className="text-sm text-muted-foreground"> g</span>
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
