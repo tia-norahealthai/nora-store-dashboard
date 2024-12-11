@@ -82,7 +82,7 @@ const data = {
       items: [
         {
           title: "Menu",
-          url: "#",
+          url: "/menu",
         },
         {
           title: "Promotions",
