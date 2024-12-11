@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { SuggestedQueries } from "./suggested-queries"
 
 type Message = {
   id: string
@@ -19,7 +20,15 @@ export function MariaChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(true)
   const { toast } = useToast()
+  const [conversationId, setConversationId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!conversationId) {
+      setConversationId(Date.now().toString())
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +72,10 @@ export function MariaChat() {
         timestamp: new Date(),
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
+      const updatedMessages = [...messages, userMessage, assistantMessage]
+      setMessages(updatedMessages)
+
+      await saveConversation(updatedMessages)
     } catch (error) {
       toast({
         title: "Error",
@@ -74,6 +86,83 @@ export function MariaChat() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const saveConversation = async (messages: Message[]) => {
+    if (!conversationId || messages.length === 0) return
+
+    try {
+      await fetch('/api/chat/history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: conversationId,
+          messages,
+          title: messages[0].content.slice(0, 50) + (messages[0].content.length > 50 ? '...' : ''),
+          topics: [],
+        }),
+      })
+    } catch (error) {
+      console.error('Error saving conversation:', error)
+    }
+  }
+
+  const handleSuggestedQuery = (prompt: string) => {
+    if (isLoading) return
+
+    setShowSuggestions(false)
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: prompt,
+      role: "user",
+      timestamp: new Date(),
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: [...messages, userMessage].map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      }),
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to get response')
+      return response.json()
+    })
+    .then(data => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.content,
+        role: "assistant",
+        timestamp: new Date(),
+      }
+
+      const updatedMessages = [...messages, userMessage, assistantMessage]
+      setMessages(updatedMessages)
+      return saveConversation(updatedMessages)
+    })
+    .catch(error => {
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI. Please try again.",
+        variant: "destructive",
+      })
+      console.error('Error:', error)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
   }
 
   return (
@@ -135,19 +224,22 @@ export function MariaChat() {
           </div>
         )}
       </div>
-      <div className="border-t p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+      <div className="border-t">
+        {showSuggestions && <SuggestedQueries onQuerySelect={handleSuggestedQuery} />}
+        <div className="border-t p-4">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button type="submit" disabled={isLoading || !input.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   )

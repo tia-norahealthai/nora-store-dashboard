@@ -13,9 +13,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { MariaChat } from "@/components/maria-chat"
+import { ChatHistory } from "@/components/chat-history"
 
-export default function MariaPage() {
+export default function ChatHistoryPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -27,22 +27,22 @@ export default function MariaPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria">Maria</BreadcrumbLink>
+                  <BreadcrumbLink href="/maria">Maria AI Assistant</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chat</BreadcrumbPage>
+                  <BreadcrumbPage>Chat History</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
-          <MariaChat />
+          <ChatHistory />
         </div>
       </SidebarInset>
     </SidebarProvider>

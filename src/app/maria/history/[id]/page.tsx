@@ -13,9 +13,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { MariaChat } from "@/components/maria-chat"
+import { ChatSession } from "@/components/chat-session"
 
-export default function MariaPage() {
+export default function ChatSessionPage({ params }: { params: { id: string } }) {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -27,22 +27,26 @@ export default function MariaPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria">Maria</BreadcrumbLink>
+                  <BreadcrumbLink href="/maria">Maria AI Assistant</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chat</BreadcrumbPage>
+                  <BreadcrumbLink href="/maria/history">Chat History</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Session Details</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
-          <MariaChat />
+          <ChatSession sessionId={params.id} />
         </div>
       </SidebarInset>
     </SidebarProvider>
