@@ -94,7 +94,7 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold">{item.name}</h3>
+                    <h2 className="font-semibold">{item.name}</h2>
                     <p className="text-sm text-muted-foreground">{item.category}</p>
                   </div>
                   <div className="flex items-center gap-2">

@@ -22,222 +22,28 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreHorizontal, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import type { Database } from "@/lib/database.types"
 
-type Order = {
-  id: string
-  orderNumber: string
-  customer: {
-    name: string
-    email: string
-    avatarUrl?: string
-  }
-  status: "pending" | "processing" | "completed" | "cancelled"
-  product: string
-  amount: number
-  date: string
+type Order = Database['public']['Tables']['orders']['Row'] & {
+  customer: Database['public']['Tables']['customers']['Row']
+  order_items: (Database['public']['Tables']['order_items']['Row'] & {
+    menu_item: Database['public']['Tables']['menu_items']['Row']
+  })[]
 }
 
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-2024-001",
-    customer: {
-      name: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      avatarUrl: "/avatars/01.png"
-    },
-    status: "completed",
-    product: "Premium Plan",
-    amount: 99.00,
-    date: "2024-03-20"
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2024-002",
-    customer: {
-      name: "Michael Chen",
-      email: "m.chen@example.com",
-      avatarUrl: "/avatars/02.png"
-    },
-    status: "processing",
-    product: "Basic Plan",
-    amount: 49.00,
-    date: "2024-03-19"
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2024-003",
-    customer: {
-      name: "Emma Wilson",
-      email: "emma.w@example.com",
-      avatarUrl: "/avatars/03.png"
-    },
-    status: "pending",
-    product: "Enterprise Plan",
-    amount: 299.00,
-    date: "2024-03-18"
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-2024-004",
-    customer: {
-      name: "James Brown",
-      email: "j.brown@example.com"
-    },
-    status: "completed",
-    product: "Premium Plan",
-    amount: 99.00,
-    date: "2024-03-17"
-  },
-  {
-    id: "5",
-    orderNumber: "ORD-2024-005",
-    customer: {
-      name: "Sofia Garcia",
-      email: "s.garcia@example.com",
-      avatarUrl: "/avatars/04.png"
-    },
-    status: "cancelled",
-    product: "Basic Plan",
-    amount: 49.00,
-    date: "2024-03-16"
-  },
-  {
-    id: "6",
-    orderNumber: "ORD-2024-006",
-    customer: {
-      name: "Lucas Kim",
-      email: "l.kim@example.com"
-    },
-    status: "processing",
-    product: "Enterprise Plan",
-    amount: 299.00,
-    date: "2024-03-15"
-  },
-  {
-    id: "7",
-    orderNumber: "ORD-2024-007",
-    customer: {
-      name: "Olivia Taylor",
-      email: "o.taylor@example.com",
-      avatarUrl: "/avatars/05.png"
-    },
-    status: "completed",
-    product: "Premium Plan",
-    amount: 99.00,
-    date: "2024-03-14"
-  },
-  {
-    id: "8",
-    orderNumber: "ORD-2024-008",
-    customer: {
-      name: "William Lee",
-      email: "w.lee@example.com"
-    },
-    status: "pending",
-    product: "Basic Plan",
-    amount: 49.00,
-    date: "2024-03-13"
-  },
-  {
-    id: "9",
-    orderNumber: "ORD-2024-009",
-    customer: {
-      name: "Isabella Martinez",
-      email: "i.martinez@example.com",
-      avatarUrl: "/avatars/06.png"
-    },
-    status: "completed",
-    product: "Enterprise Plan",
-    amount: 299.00,
-    date: "2024-03-12"
-  },
-  {
-    id: "10",
-    orderNumber: "ORD-2024-010",
-    customer: {
-      name: "David Anderson",
-      email: "d.anderson@example.com"
-    },
-    status: "processing",
-    product: "Premium Plan",
-    amount: 99.00,
-    date: "2024-03-11"
-  },
-  {
-    id: "11",
-    orderNumber: "ORD-2024-011",
-    customer: {
-      name: "Ava Thompson",
-      email: "a.thompson@example.com",
-      avatarUrl: "/avatars/07.png"
-    },
-    status: "completed",
-    product: "Basic Plan",
-    amount: 49.00,
-    date: "2024-03-10"
-  },
-  {
-    id: "12",
-    orderNumber: "ORD-2024-012",
-    customer: {
-      name: "Ethan Wright",
-      email: "e.wright@example.com"
-    },
-    status: "cancelled",
-    product: "Enterprise Plan",
-    amount: 299.00,
-    date: "2024-03-09"
-  },
-  {
-    id: "13",
-    orderNumber: "ORD-2024-013",
-    customer: {
-      name: "Mia Patel",
-      email: "m.patel@example.com",
-      avatarUrl: "/avatars/08.png"
-    },
-    status: "pending",
-    product: "Premium Plan",
-    amount: 99.00,
-    date: "2024-03-08"
-  },
-  {
-    id: "14",
-    orderNumber: "ORD-2024-014",
-    customer: {
-      name: "Alexander Wong",
-      email: "a.wong@example.com"
-    },
-    status: "completed",
-    product: "Basic Plan",
-    amount: 49.00,
-    date: "2024-03-07"
-  },
-  {
-    id: "15",
-    orderNumber: "ORD-2024-015",
-    customer: {
-      name: "Sophie Miller",
-      email: "s.miller@example.com",
-      avatarUrl: "/avatars/09.png"
-    },
-    status: "processing",
-    product: "Enterprise Plan",
-    amount: 299.00,
-    date: "2024-03-06"
-  }
-]
+interface OrdersTableProps {
+  orders: Order[]
+}
 
-export function OrdersTable() {
+export function OrdersTable({ orders }: OrdersTableProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   
-  const filteredOrders = mockOrders.filter(order => 
+  const filteredOrders = orders.filter(order => 
     order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    order.id.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
@@ -268,9 +74,9 @@ export function OrdersTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Order</TableHead>
+            <TableHead>Order ID</TableHead>
             <TableHead>Customer</TableHead>
-            <TableHead>Product</TableHead>
+            <TableHead>Items</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Date</TableHead>
             <TableHead className="text-right">Amount</TableHead>
@@ -284,13 +90,12 @@ export function OrdersTable() {
               className="cursor-pointer"
               onClick={() => handleViewDetails(order.id)}
             >
-              <TableCell className="font-medium">{order.orderNumber}</TableCell>
+              <TableCell className="font-medium">{order.id}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={order.customer.avatarUrl} alt={order.customer.name} />
                     <AvatarFallback>
-                      {order.customer.name.split(" ").map(n => n[0]).join("")}
+                      {order.customer.name.split(" ").map((n: string) => n[0]).join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
@@ -299,7 +104,9 @@ export function OrdersTable() {
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{order.product}</TableCell>
+              <TableCell>
+                {order.order_items.map(item => item.menu_item.name).join(", ")}
+              </TableCell>
               <TableCell>
                 <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                   order.status === "completed" ? "bg-green-50 text-green-700" :
@@ -310,8 +117,8 @@ export function OrdersTable() {
                   {order.status}
                 </div>
               </TableCell>
-              <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-              <TableCell className="text-right">${order.amount.toFixed(2)}</TableCell>
+              <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right">${order.total_amount.toFixed(2)}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

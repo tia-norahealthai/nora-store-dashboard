@@ -293,7 +293,7 @@ export function MariaChat() {
                     : "bg-primary text-primary-foreground"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">
+                <p className="text-base whitespace-pre-wrap break-words">
                   {message.content}
                 </p>
               </div>
