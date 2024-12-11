@@ -212,7 +212,7 @@ export function MenuItems() {
         {paginatedItems.map((item) => (
           <Card 
             key={item.id} 
-            className="overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+            className="overflow-hidden cursor-pointer"
             onClick={() => handleViewDetails(item.id)}
           >
             {item.imageUrl && (
@@ -247,6 +247,9 @@ export function MenuItems() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                       Edit item
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      Update status
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 

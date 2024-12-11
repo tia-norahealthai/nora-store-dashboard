@@ -13,6 +13,7 @@ import {
   Settings2,
   SquareTerminal,
   Store,
+  MessageSquare,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -94,26 +95,22 @@ const data = {
         },
         {
           title: "Feedbacks",
-          url: "#",
+          url: "/feedbacks",
         },
       ],
     },
     {
-      title: "Gloria AI Assistant",
-      url: "#",
+      title: "MarIA Assistant",
+      url: "/maria",
       icon: Bot,
       items: [
         {
-          title: "Ask Gloria",
-          url: "#",
+          title: "Chat with MarIA",
+          url: "/maria",
         },
         {
-          title: "Conversation History",
-          url: "#",
-        },
-        {
-          title: "Personalize",
-          url: "#",
+          title: "Chat History",
+          url: "/maria/history",
         },
       ],
     },

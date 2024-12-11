@@ -15,18 +15,16 @@ import {
 } from "@/components/ui/sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { 
   DollarSign, 
-  Edit, 
-  Tag, 
-  Utensils, 
+  UtensilsCrossed, 
+  Tag,
   AlertCircle,
-  ArrowLeft
+  ImageIcon
 } from "lucide-react"
 
 // This would typically come from your API/database
-const mockMenuItem = {
+const menuItemDetails = {
   id: "1",
   name: "Margherita Pizza",
   description: "Fresh tomatoes, mozzarella, basil, and olive oil",
@@ -48,33 +46,19 @@ const mockMenuItem = {
     calories: 850,
     protein: 35,
     carbs: 98,
-    fat: 38,
-    fiber: 4
+    fat: 28
   },
-  preparationTime: 20, // in minutes
-  spiceLevel: "mild",
-  allergens: ["dairy", "gluten"],
+  preparationTime: "15-20 minutes",
+  popularity: "High",
+  reviews: 4.8
 }
 
 export default function MenuItemDetailsPage({ params }: { params: { id: string } }) {
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "available":
-        return "success"
-      case "out_of_stock":
-        return "destructive"
-      case "coming_soon":
-        return "secondary"
-      default:
-        return "default"
-    }
-  }
-
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -89,7 +73,7 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{mockMenuItem.name}</BreadcrumbPage>
+                  <BreadcrumbPage>{menuItemDetails.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -97,145 +81,159 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Item Header */}
+          {/* Menu Item Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" asChild>
-                <a href="/menu">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Menu
-                </a>
-              </Button>
+            <div>
+              <h1 className="text-2xl font-bold">{menuItemDetails.name}</h1>
+              <p className="text-muted-foreground">{menuItemDetails.description}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Item
-              </Button>
-            </div>
+            <Badge variant={menuItemDetails.status === "available" ? "success" : "secondary"}>
+              {menuItemDetails.status.replace("_", " ")}
+            </Badge>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Image and Basic Info */}
-            <Card>
-              <div className="aspect-video w-full overflow-hidden">
-                <img
-                  src={mockMenuItem.imageUrl}
-                  alt={mockMenuItem.name}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">{mockMenuItem.name}</CardTitle>
-                    <p className="text-muted-foreground mt-2">
-                      {mockMenuItem.description}
-                    </p>
+            {/* Image */}
+            <Card className="md:col-span-2">
+              <CardContent className="p-0">
+                {menuItemDetails.imageUrl ? (
+                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                    <img
+                      src={menuItemDetails.imageUrl}
+                      alt={menuItemDetails.name}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
-                  <Badge variant={getStatusBadgeVariant(mockMenuItem.status)}>
-                    {mockMenuItem.status.replace("_", " ")}
-                  </Badge>
-                </div>
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Category:</span>
-                  </div>
-                  <span>{mockMenuItem.category}</span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Category</span>
+                  <span className="font-medium">{menuItemDetails.category}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Price:</span>
-                  </div>
-                  <span className="font-semibold">
-                    ${mockMenuItem.price.toFixed(2)}
-                  </span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-medium">${menuItemDetails.price.toFixed(2)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Utensils className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Preparation Time:</span>
-                  </div>
-                  <span>{mockMenuItem.preparationTime} minutes</span>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Preparation Time</span>
+                  <span className="font-medium">{menuItemDetails.preparationTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Popularity</span>
+                  <span className="font-medium">{menuItemDetails.popularity}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Rating</span>
+                  <span className="font-medium">{menuItemDetails.reviews} / 5.0</span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Details */}
-            <div className="space-y-4">
-              {/* Dietary Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    Dietary Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Dietary Options</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {mockMenuItem.dietary.map((diet) => (
-                        <Badge key={diet} variant="outline">
-                          {diet}
-                        </Badge>
-                      ))}
+            {/* Dietary Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  Dietary Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {menuItemDetails.dietary.map((diet) => (
+                    <Badge key={diet} variant="outline">
+                      {diet}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Ingredients */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UtensilsCrossed className="h-5 w-5" />
+                  Ingredients
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {menuItemDetails.ingredients.map((ingredient) => (
+                    <div
+                      key={ingredient}
+                      className="rounded-md border px-3 py-2"
+                    >
+                      {ingredient}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Nutritional Information */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Nutritional Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="flex items-center gap-4 rounded-lg border p-4">
+                    <div>
+                      <p className="text-sm font-medium">Calories</p>
+                      <p className="text-2xl font-bold">
+                        {menuItemDetails.nutritionalInfo.calories}
+                        <span className="text-sm text-muted-foreground"> kcal</span>
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Allergens</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {mockMenuItem.allergens.map((allergen) => (
-                        <Badge key={allergen} variant="destructive">
-                          {allergen}
-                        </Badge>
-                      ))}
+                  <div className="flex items-center gap-4 rounded-lg border p-4">
+                    <div>
+                      <p className="text-sm font-medium">Protein</p>
+                      <p className="text-2xl font-bold">
+                        {menuItemDetails.nutritionalInfo.protein}
+                        <span className="text-sm text-muted-foreground"> g</span>
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Nutritional Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Nutritional Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    {Object.entries(mockMenuItem.nutritionalInfo).map(([key, value]) => (
-                      <div key={key} className="space-y-1">
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {key}
-                        </p>
-                        <p className="text-lg font-semibold">
-                          {value}{key === "calories" ? "kcal" : "g"}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-4 rounded-lg border p-4">
+                    <div>
+                      <p className="text-sm font-medium">Carbs</p>
+                      <p className="text-2xl font-bold">
+                        {menuItemDetails.nutritionalInfo.carbs}
+                        <span className="text-sm text-muted-foreground"> g</span>
+                      </p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Ingredients */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ingredients</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {mockMenuItem.ingredients.map((ingredient) => (
-                      <Badge key={ingredient} variant="secondary">
-                        {ingredient}
-                      </Badge>
-                    ))}
+                  <div className="flex items-center gap-4 rounded-lg border p-4">
+                    <div>
+                      <p className="text-sm font-medium">Fat</p>
+                      <p className="text-2xl font-bold">
+                        {menuItemDetails.nutritionalInfo.fat}
+                        <span className="text-sm text-muted-foreground"> g</span>
+                      </p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </SidebarInset>
