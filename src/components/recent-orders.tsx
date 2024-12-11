@@ -135,7 +135,22 @@ const recentOrders = [
   }
 ]
 
-export function RecentOrders() {
+interface RecentOrdersProps {
+  orders?: {
+    id: string
+    customer: {
+      name: string
+      email: string
+      avatar: string
+    }
+    product: string
+    status: string
+    amount: string
+    date: string
+  }[]
+}
+
+export function RecentOrders({ orders = recentOrders }: RecentOrdersProps) {
   const router = useRouter()
 
   const handleViewDetails = (orderId: string) => {
@@ -144,10 +159,6 @@ export function RecentOrders() {
 
   return (
     <div className="rounded-xl border bg-card">
-      <div className="flex items-center justify-between p-6">
-        <h2 className="text-2xl font-semibold">Recent Orders</h2>
-        <span className="text-sm text-muted-foreground">10 most recent orders</span>
-      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -158,7 +169,7 @@ export function RecentOrders() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {recentOrders.map((order) => (
+          {orders.map((order) => (
             <TableRow 
               key={order.id}
               className="cursor-pointer"

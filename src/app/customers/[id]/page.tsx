@@ -26,8 +26,19 @@ import {
   DollarSign,
   Coffee,
   Pizza,
-  Wine
+  Wine,
+  Package
 } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { useRouter } from "next/navigation"
+import { RecentOrders } from "@/components/recent-orders"
 
 // This would typically come from your API/database
 const customerDetails = {
@@ -53,14 +64,67 @@ const customerDetails = {
     snacks: 30.00,
     drinks: 25.00
   },
-  recentOrders: [
+  orders: [
     {
-      id: "ord-001",
-      date: "2024-03-20",
-      items: ["Vegetable Curry", "Naan Bread"],
-      total: 35.50
+      id: "1",
+      customer: {
+        name: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        avatar: "SJ"
+      },
+      product: "Margherita Pizza, Garlic Bread",
+      status: "completed",
+      amount: "$35.50",
+      date: "2024-03-20T14:30:00Z"
     },
-    // ... more orders
+    {
+      id: "2",
+      customer: {
+        name: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        avatar: "SJ"
+      },
+      product: "Vegetable Curry, Naan Bread",
+      status: "completed",
+      amount: "$28.75",
+      date: "2024-03-15T18:45:00Z"
+    },
+    {
+      id: "3",
+      customer: {
+        name: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        avatar: "SJ"
+      },
+      product: "Caesar Salad, Iced Tea",
+      status: "cancelled",
+      amount: "$15.99",
+      date: "2024-03-10T12:15:00Z"
+    },
+    {
+      id: "4",
+      customer: {
+        name: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        avatar: "SJ"
+      },
+      product: "Pasta Carbonara, Tiramisu",
+      status: "completed",
+      amount: "$42.50",
+      date: "2024-03-05T19:30:00Z"
+    },
+    {
+      id: "5",
+      customer: {
+        name: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        avatar: "SJ"
+      },
+      product: "Sushi Platter, Miso Soup",
+      status: "completed",
+      amount: "$55.25",
+      date: "2024-02-28T20:00:00Z"
+    }
   ]
 }
 
@@ -233,6 +297,18 @@ export default function CustomerDetailsPage({ params }: { params: { id: string }
                 </div>
               </CardContent>
             </Card>
+
+            {/* Replace CustomerOrdersTable with RecentOrders */}
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-2xl">Order History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RecentOrders orders={customerDetails.orders} />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </SidebarInset>

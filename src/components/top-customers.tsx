@@ -1,6 +1,3 @@
-"use client"
-
-import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Medal } from "lucide-react"
@@ -111,12 +108,6 @@ const getMedalColor = (index: number) => {
 }
 
 export function TopCustomers() {
-  const router = useRouter()
-
-  const handleViewDetails = (customerId: string) => {
-    router.push(`/customers/${customerId}`)
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -129,8 +120,7 @@ export function TopCustomers() {
               key={customer.id}
               className={`flex items-center justify-between ${
                 index < 3 ? 'bg-muted/50 p-3 rounded-lg' : 'p-2'
-              } cursor-pointer hover:bg-muted/50 transition-colors`}
-              onClick={() => handleViewDetails(customer.id)}
+              }`}
             >
               <div className="flex items-center gap-3">
                 <Medal className={`h-5 w-5 ${getMedalColor(index)}`} />
