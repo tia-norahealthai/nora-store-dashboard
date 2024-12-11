@@ -14,6 +14,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { MenuItems } from "@/components/menu-items"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 export default function MenuPage() {
   return (
@@ -37,10 +38,11 @@ export default function MenuPage() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 w-full">
           <MenuItems />
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 } 

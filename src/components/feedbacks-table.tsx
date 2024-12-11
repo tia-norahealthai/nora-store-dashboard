@@ -238,7 +238,7 @@ export function FeedbacksTable() {
           </TableBody>
         </Table>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedFeedbacks.map((feedback) => (
             <Card key={feedback.id}>
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">

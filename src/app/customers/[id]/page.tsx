@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table"
 import { useRouter } from "next/navigation"
 import { RecentOrders } from "@/components/recent-orders"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 // This would typically come from your API/database
 const customerDetails = {
@@ -312,6 +313,7 @@ export default function CustomerDetailsPage({ params }: { params: { id: string }
           </div>
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 } 

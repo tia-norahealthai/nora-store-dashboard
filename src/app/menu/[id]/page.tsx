@@ -23,6 +23,7 @@ import {
   ImageIcon
 } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 // This would typically come from your API/database
 const menuItemDetails = {
@@ -82,7 +83,7 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt- w-full">
           {/* Menu Item Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
@@ -246,6 +247,7 @@ export default function MenuItemDetailsPage({ params }: { params: { id: string }
           </div>
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 } 

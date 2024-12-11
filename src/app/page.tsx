@@ -17,6 +17,7 @@ import {
 import { BarChart3, Users, DollarSign, ArrowUpRight } from "lucide-react"
 import { RecentOrders } from "@/components/recent-orders"
 import { TopCustomers } from "@/components/top-customers"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 export default function Page() {
   return (
@@ -37,7 +38,7 @@ export default function Page() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="Total Revenue"
               value="$45,231.89"
@@ -63,12 +64,13 @@ export default function Page() {
               trendValue="+2.4% from last month"
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             <RecentOrders />
             <TopCustomers />
           </div>
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 }

@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, MapPin, Package, User } from "lucide-react"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 // This would typically come from your API/database
 const orderDetails = {
@@ -217,6 +218,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           </div>
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 } 

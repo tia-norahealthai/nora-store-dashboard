@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { InvoicesTable } from "@/components/invoices-table"
+import { ChatSidebar } from "@/components/chat-sidebar"
 
 export default function InvoicesPage() {
   return (
@@ -37,6 +38,7 @@ export default function InvoicesPage() {
           <InvoicesTable />
         </div>
       </SidebarInset>
+      <ChatSidebar />
     </SidebarProvider>
   )
 } 
