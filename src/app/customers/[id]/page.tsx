@@ -82,6 +82,12 @@ export default async function CustomerPage({ params }: PageProps) {
                     <p className="text-lg">{customer.address}</p>
                   </div>
                 )}
+                {customer.food_preferences && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Food Preferences</Label>
+                    <p className="text-lg">{customer.food_preferences}</p>
+                  </div>
+                )}
                 {customer.dietary_preferences && (
                   <div>
                     <Label className="text-sm text-muted-foreground">Dietary Preferences</Label>
@@ -94,6 +100,26 @@ export default async function CustomerPage({ params }: PageProps) {
                     <p className="text-lg">{customer.allergens}</p>
                   </div>
                 )}
+                <div className="grid grid-cols-3 gap-4">
+                  {customer.snacks_budget && (
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Snacks Budget</Label>
+                      <p className="text-lg">${customer.snacks_budget}</p>
+                    </div>
+                  )}
+                  {customer.meals_budget && (
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Meals Budget</Label>
+                      <p className="text-lg">${customer.meals_budget}</p>
+                    </div>
+                  )}
+                  {customer.drinks_budget && (
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Drinks Budget</Label>
+                      <p className="text-lg">${customer.drinks_budget}</p>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Customer Since</Label>
                   <p className="text-lg">{formatDate(customer.created_at)}</p>

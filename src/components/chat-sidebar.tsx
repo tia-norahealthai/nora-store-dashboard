@@ -44,7 +44,7 @@ export function ChatSidebar() {
             <div className="flex items-center gap-2">
               <Bot className="h-6 w-6" />
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Maria AI Assistant</span>
+                <span className="text-sm font-medium">MarIA</span>
                 <span className="text-xs text-muted-foreground">Chat with Maria</span>
               </div>
             </div>

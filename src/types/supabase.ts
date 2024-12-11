@@ -26,6 +26,10 @@ export interface Database {
           avatar_url?: string
           created_at?: string
           updated_at?: string
+          snacks_budget?: number
+          meals_budget?: number
+          drinks_budget?: number
+          food_preferences?: string[]
         }
         Insert: Omit<Database['public']['Tables']['customers']['Row'], 'id'>
         Update: Partial<Database['public']['Tables']['customers']['Row']>

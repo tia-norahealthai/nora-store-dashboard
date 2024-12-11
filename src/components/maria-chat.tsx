@@ -264,8 +264,8 @@ export function MariaChat() {
               <Avatar className="h-16 w-16 mb-4">
                 <Bot className="h-8 w-8 text-primary" />
               </Avatar>
-              <h2 className="text-2xl font-semibold mb-1">Maria AI Assistant</h2>
-              <p className="text-sm text-muted-foreground">Your restaurant management companion</p>
+              <h2 className="text-2xl font-semibold mb-1">MarIA</h2>
+              <p className="text-lg text-slate-600 tracking-wider">Your restaurant management companion</p>
             </div>
           )}
 

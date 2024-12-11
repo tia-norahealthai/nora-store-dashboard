@@ -31,7 +31,7 @@ export default function ChatSessionPage({ params }: { params: { id: string } }) 
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria">Maria AI Assistant</BreadcrumbLink>
+                  <BreadcrumbLink href="/maria">MarIA</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>

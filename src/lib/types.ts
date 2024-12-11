@@ -4,4 +4,8 @@ export interface Customer {
   email: string
   phone: string
   created_at: string
+  snacks_budget?: number
+  meals_budget?: number
+  drinks_budget?: number
+  food_preferences?: string[]
 } 
