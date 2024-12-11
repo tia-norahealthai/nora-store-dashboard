@@ -31,28 +31,11 @@ export default async function OrdersPage() {
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
-        id,
-        created_at,
-        customer_id,
-        status,
-        total_amount,
-        customer:customers(
-          id,
-          created_at,
-          email,
-          name
-        ),
-        order_items(
-          id,
-          quantity,
-          unit_price,
-          menu_item:menu_items(
-            id,
-            name,
-            description,
-            price,
-            category
-          )
+        *,
+        customers!customer_id(*),
+        order_items!order_id(
+          *,
+          menu_items!menu_item_id(*)
         )
       `)
       .order('created_at', { ascending: false })
@@ -71,10 +54,10 @@ export default async function OrdersPage() {
 
     const transformedOrders = orders.map(order => ({
       ...order,
-      customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
+      customer: order.customers,
       order_items: order.order_items.map(item => ({
         ...item,
-        menu_item: Array.isArray(item.menu_item) ? item.menu_item[0] : item.menu_item
+        menu_item: item.menu_items
       }))
     })) as Order[]
 

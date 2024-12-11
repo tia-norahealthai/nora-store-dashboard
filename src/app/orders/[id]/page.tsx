@@ -18,56 +18,121 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, MapPin, Package, User } from "lucide-react"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
 
-// This would typically come from your API/database
-const orderDetails = {
-  id: "ORD-2024-001",
-  status: "completed",
+// Add this interface for type safety
+interface OrderDetails {
+  id: string
+  status: string
   customer: {
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "JD",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St, New York, NY 10001"
-  },
-  items: [
-    {
-      id: "1",
-      name: "Margherita Pizza",
-      quantity: 2,
-      price: 15.99,
-      notes: "Extra cheese please"
-    },
-    {
-      id: "2",
-      name: "Garlic Bread",
-      quantity: 1,
-      price: 5.99,
-      notes: ""
-    },
-    {
-      id: "3",
-      name: "Caesar Salad",
-      quantity: 1,
-      price: 8.99,
-      notes: "Dressing on the side"
-    }
-  ],
+    name: string
+    email: string
+    avatar: string
+    phone: string
+    address: string
+  }
+  items: {
+    id: string
+    name: string
+    quantity: number
+    price: number
+    notes: string
+  }[]
   payment: {
-    method: "Credit Card",
-    subtotal: 46.96,
-    tax: 3.76,
-    delivery: 5.00,
-    total: 55.72
-  },
+    method: string
+    subtotal: number
+    tax: number
+    delivery: number
+    total: number
+  }
   timestamps: {
-    placed: "2024-03-20T14:30:00Z",
-    estimated: "2024-03-20T15:15:00Z",
-    completed: "2024-03-20T15:10:00Z"
+    placed: string
+    estimated: string
+    completed: string | null
   }
 }
 
-export default function OrderDetailsPage({ params }: { params: { id: string } }) {
+async function getOrderDetails(orderId: string) {
+  const supabase = createServerComponentClient({ cookies })
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select(`
+      *,
+      customer:customers(*),
+      items:order_items(
+        id,
+        menu_items(name, price),
+        quantity,
+        notes
+      )
+    `)
+    .eq('id', orderId)
+    .single()
+
+  if (error || !order) {
+    return null
+  }
+
+  // Calculate subtotal from items
+  const subtotal = order.items.reduce((sum: number, item: any) => {
+    return sum + (item.menu_items.price * item.quantity)
+  }, 0)
+
+  // Calculate tax (assuming 10% tax rate - adjust as needed)
+  const taxRate = 0.1
+  const tax = subtotal * taxRate
+
+  // Delivery fee (you can adjust this or fetch from order if stored)
+  const deliveryFee = order.delivery_fee || 5.00
+
+  // Calculate total
+  const total = subtotal + tax + deliveryFee
+
+  // Transform the data to match our interface
+  const orderDetails: OrderDetails = {
+    id: order.id,
+    status: order.status,
+    customer: {
+      name: order.customer.name,
+      email: order.customer.email,
+      avatar: order.customer.avatar || order.customer.name.substring(0, 2).toUpperCase(),
+      phone: order.customer.phone,
+      address: order.customer.address
+    },
+    items: order.items.map((item: any) => ({
+      id: item.id,
+      name: item.menu_items.name,
+      quantity: item.quantity,
+      price: item.menu_items.price,
+      notes: item.notes || ''
+    })),
+    payment: {
+      method: order.payment_method,
+      subtotal: subtotal,
+      tax: tax,
+      delivery: deliveryFee,
+      total: total
+    },
+    timestamps: {
+      placed: order.created_at,
+      estimated: order.estimated_delivery,
+      completed: order.completed_at
+    }
+  }
+
+  return orderDetails
+}
+
+export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+  const orderDetails = await getOrderDetails(params.id)
+
+  if (!orderDetails) {
+    notFound()
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -154,15 +219,17 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <div>
-                    <p className="font-medium">Order Completed</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(orderDetails.timestamps.completed).toLocaleString()}
-                    </p>
+                {orderDetails.timestamps.completed && (
+                  <div className="flex items-center gap-4">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <div>
+                      <p className="font-medium">Order Completed</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(orderDetails.timestamps.completed).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -197,20 +264,20 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <div className="mt-6 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>${orderDetails.payment.subtotal.toFixed(2)}</span>
+                    <span>${(orderDetails.payment.subtotal || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>${orderDetails.payment.tax.toFixed(2)}</span>
+                    <span>${(orderDetails.payment.tax || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span>${orderDetails.payment.delivery.toFixed(2)}</span>
+                    <span>${(orderDetails.payment.delivery || 0).toFixed(2)}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-medium">
                     <span>Total</span>
-                    <span>${orderDetails.payment.total.toFixed(2)}</span>
+                    <span>${(orderDetails.payment.total || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
