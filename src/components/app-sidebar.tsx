@@ -74,7 +74,7 @@ const data = {
         },
         {
           title: "Invoices",
-          url: "#",
+          url: "/invoices",
         },
       ],
     },
