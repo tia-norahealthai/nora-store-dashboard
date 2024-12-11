@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { SuggestedQueries } from "./suggested-queries"
+import { usePathname } from "next/navigation"
+import { useMariaContext } from "@/contexts/maria-context"
+import { useStore } from '@/store'
 
 type Message = {
   id: string
@@ -16,231 +18,220 @@ type Message = {
   timestamp: Date
 }
 
+interface PageData {
+  [key: string]: any;
+}
+
+const PAGE_SPECIFIC_DATA: { [key: string]: () => PageData } = {
+  "/menu": () => ({
+    type: "menu",
+    data: {
+      items: document.querySelectorAll('[data-menu-item]')?.length || 0,
+      categories: Array.from(document.querySelectorAll('[data-category]')).map(el => el.textContent),
+    }
+  }),
+  "/customers": () => ({
+    type: "customers",
+    data: {
+      totalCustomers: document.querySelector('[data-total-customers]')?.textContent,
+      activeCustomers: document.querySelector('[data-active-customers]')?.textContent,
+    }
+  }),
+  "/orders": () => ({
+    type: "orders",
+    data: {
+      pendingOrders: document.querySelector('[data-pending-orders]')?.textContent,
+      totalOrders: document.querySelector('[data-total-orders]')?.textContent,
+    }
+  })
+}
+
 export function MariaChat() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>([{
+    id: 'welcome',
+    content: "👋 Hi! I'm Maria, your AI assistant. I can help you with:\n\n" +
+      "• Managing menu items and categories\n" +
+      "• Analyzing customer data and trends\n" +
+      "• Tracking orders and performance\n" +
+      "• Providing business insights\n\n" +
+      "How can I help you today?",
+    role: "assistant",
+    timestamp: new Date()
+  }])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(true)
+  const pathname = usePathname()
   const { toast } = useToast()
-  const [conversationId, setConversationId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!conversationId) {
-      setConversationId(Date.now().toString())
+  const mariaContext = useMariaContext()
+  const dispatch = useStore((state) => state.dispatch)
+  
+  // Memoize the context data function to prevent infinite loops
+  const getContextData = useCallback(() => {
+    return {
+      page: pathname,
+      data: {
+        type: mariaContext.pageType,
+        data: mariaContext.pageData
+      }
     }
-  }, [])
+  }, [pathname, mariaContext.pageType, mariaContext.pageData])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      role: "user",
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
+  const handleCommandExecution = async (command: string, data: any) => {
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map(msg => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response');
+      switch (command) {
+        case 'deleteMenuItem':
+          await dispatch.menu.deleteMenuItem(data.id)
+          toast({
+            title: "Success",
+            description: "Menu item deleted successfully",
+          })
+          break
+        // Add more command cases as needed
+        default:
+          console.warn(`Unknown command: ${command}`)
       }
-
-      const data = await response.json();
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.content,
-        role: "assistant",
-        timestamp: new Date(),
-      }
-
-      const updatedMessages = [...messages, userMessage, assistantMessage]
-      setMessages(updatedMessages)
-
-      await saveConversation(updatedMessages)
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to get response from AI. Please try again.",
-        variant: "destructive",
+        description: "Failed to execute command. Please try again.",
+        variant: "destructive"
       })
-      console.error('Error:', error)
+    }
+  }
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return
+
+    setIsLoading(true)
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      role: "user",
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, newMessage])
+    setInput("")
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, newMessage].map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          context: getContextData()
+        })
+      })
+
+      if (!response.ok) throw new Error("Failed to send message")
+
+      const data = await response.json()
+      
+      // Handle any commands returned from the API
+      if (data.command) {
+        await handleCommandExecution(data.command, data.commandData)
+      }
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        content: data.content,
+        role: "assistant",
+        timestamp: new Date()
+      }])
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const saveConversation = async (messages: Message[]) => {
-    if (!conversationId || messages.length === 0) return
-
-    try {
-      await fetch('/api/chat/history', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: conversationId,
-          messages,
-          title: messages[0].content.slice(0, 50) + (messages[0].content.length > 50 ? '...' : ''),
-          topics: [],
-        }),
-      })
-    } catch (error) {
-      console.error('Error saving conversation:', error)
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    sendMessage(input)
   }
 
-  const handleSuggestedQuery = (prompt: string) => {
-    if (isLoading) return
-
-    setShowSuggestions(false)
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: prompt,
-      role: "user",
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setIsLoading(true)
-
-    fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [...messages, userMessage].map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-      }),
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to get response')
-      return response.json()
-    })
-    .then(data => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.content,
-        role: "assistant",
-        timestamp: new Date(),
-      }
-
-      const updatedMessages = [...messages, userMessage, assistantMessage]
-      setMessages(updatedMessages)
-      return saveConversation(updatedMessages)
-    })
-    .catch(error => {
-      toast({
-        title: "Error",
-        description: "Failed to get response from AI. Please try again.",
-        variant: "destructive",
-      })
-      console.error('Error:', error)
-    })
-    .finally(() => {
-      setIsLoading(false)
-    })
+  const handleQuerySelect = (prompt: string) => {
+    sendMessage(prompt)
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <Bot className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h2 className="mt-4 text-lg font-semibold">Welcome to Maria AI Assistant</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                How can I help you today?
-              </p>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto mb-4">
+        <div className="flex flex-col space-y-4">
+          {/* Welcome Header - Only show when there's just the welcome message */}
+          {messages.length === 1 && messages[0].id === 'welcome' && (
+            <div className="flex flex-col items-center justify-center text-center pb-4">
+              <Avatar className="h-16 w-16 mb-4">
+                <Bot className="h-8 w-8 text-primary" />
+              </Avatar>
+              <h2 className="text-2xl font-semibold mb-1">Maria AI Assistant</h2>
+              <p className="text-sm text-muted-foreground">Your restaurant management companion</p>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message) => (
+          )}
+
+          {/* Messages */}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-3 ${
+                message.role === "assistant" ? "flex-row" : "flex-row-reverse"
+              }`}
+            >
+              {message.role === "assistant" ? (
+                <Avatar className="h-8 w-8 shrink-0">
+                  <Bot className="h-5 w-5 text-primary" />
+                </Avatar>
+              ) : (
+                <Avatar className="h-8 w-8 shrink-0 bg-primary">
+                  <User className="h-5 w-5 text-primary-foreground" />
+                </Avatar>
+              )}
               <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === "assistant" ? "justify-start" : "justify-end"
+                className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                  message.role === "assistant"
+                    ? "bg-muted text-foreground"
+                    : "bg-primary text-primary-foreground"
                 }`}
               >
-                {message.role === "assistant" && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/maria-avatar.png" />
-                    <AvatarFallback>MA</AvatarFallback>
-                  </Avatar>
-                )}
-                <Card className={`max-w-[80%] p-3 ${
-                  message.role === "assistant" ? "bg-muted" : "bg-primary text-primary-foreground"
-                }`}>
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                </Card>
-                {message.role === "user" && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/user-avatar.png" />
-                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                  </Avatar>
-                )}
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {message.content}
+                </p>
               </div>
-            ))}
-            {isLoading && (
-              <div className="flex gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/maria-avatar.png" />
-                  <AvatarFallback>MA</AvatarFallback>
-                </Avatar>
-                <Card className="max-w-[80%] bg-muted p-3">
-                  <div className="flex space-x-2">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
-                </Card>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="border-t">
-        {showSuggestions && <SuggestedQueries onQuerySelect={handleSuggestedQuery} />}
-        <div className="border-t p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1"
-              disabled={isLoading}
-            />
-            <Button type="submit" disabled={isLoading || !input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* Only show suggested queries with the welcome message */}
+      {messages.length === 1 && messages[0].id === 'welcome' && (
+        <div className="px-4 mb-4">
+          <SuggestedQueries onQuerySelect={handleQuerySelect} />
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="px-4 pb-4 flex gap-3 border-t bg-background pt-4">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message..."
+          disabled={isLoading}
+          className="flex-1"
+        />
+        <Button 
+          type="submit" 
+          disabled={isLoading || !input.trim()}
+          className="shrink-0"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
     </div>
   )
 } 

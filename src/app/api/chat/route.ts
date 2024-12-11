@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
+import { handleMenuQuery } from '@/lib/menu-context-handler'
+import { PageContextData, PageType } from '@/types/data-types'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,54 +9,86 @@ const openai = new OpenAI({
 
 const FALLBACK_ENABLED = false; // Set to false in production
 
-export async function POST(req: Request) {
-  try {
-    const { messages } = await req.json();
+function createSystemMessage(
+  pageType: PageType | string = 'dashboard', 
+  contextData: PageContextData[PageType] | null = null
+): string {
+  let systemMessage = `You are Maria, an AI assistant for a restaurant management system. 
+  You have access to real-time data about menu items, orders, customers, and business metrics.
+  
+  Current context type: ${pageType}`
 
-    if (FALLBACK_ENABLED) {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return NextResponse.json({ 
-        content: "This is a fallback response while the API key is being set up. I'm Maria, your AI assistant. How can I help you today?",
-        role: 'assistant'
-      });
+  if (contextData) {
+    switch (pageType) {
+      case 'menu_details': {
+        const { item } = contextData as PageContextData['menu_details']
+        systemMessage += `\n\nCurrent Menu Item Context:
+        - Name: ${item.name}
+        - Price: $${item.price}
+        - Category: ${item.category}
+        - Description: ${item.description}
+        - Dietary: ${item.dietary.join(', ')}
+        - Allergens: ${item.allergens?.join(', ') || 'None listed'}
+        - Status: ${item.status}
+        ${item.preparationTime ? `- Preparation Time: ${item.preparationTime}` : ''}
+        ${item.ingredients ? `- Ingredients: ${item.ingredients.join(', ')}` : ''}
+        ${item.nutritionalInfo ? `
+        - Nutritional Info:
+          * Calories: ${item.nutritionalInfo.calories}
+          * Protein: ${item.nutritionalInfo.protein}g
+          * Carbs: ${item.nutritionalInfo.carbs}g
+          * Fat: ${item.nutritionalInfo.fat}g` : ''}`
+        break
+      }
+
+      // Add other cases for different page types...
     }
+  }
+
+  return systemMessage
+}
+
+export async function POST(request: Request) {
+  try {
+    const { messages, context } = await request.json()
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: "You are Maria, a helpful AI assistant focused on providing clear and concise responses."
+          content: createSystemMessage(context.type, context.data)
         },
-        ...messages.map((msg: any) => ({
-          role: msg.role,
-          content: msg.content,
-        }))
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
+        ...messages
+      ]
     });
 
-    return NextResponse.json({ 
-      content: completion.choices[0].message.content,
-      role: 'assistant'
-    });
+    const response = completion.choices[0].message.content || ''
+
+    // Check for command patterns in the response
+    const commandMatch = response.match(/\[COMMAND:(.*?)\](.*?)\[\/COMMAND\]/s)
     
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    
-    if (FALLBACK_ENABLED) {
-      return NextResponse.json({ 
-        content: "I apologize, but I'm currently in development mode. I can still chat with you, but my responses are pre-programmed. How can I assist you?",
-        role: 'assistant'
-      });
+    if (commandMatch) {
+      const [_, command, commandData] = commandMatch
+      try {
+        const parsedData = JSON.parse(commandData)
+        
+        return NextResponse.json({
+          content: response.replace(/\[COMMAND:.*?\].*?\[\/COMMAND\]/s, '').trim(),
+          command,
+          commandData: parsedData
+        })
+      } catch (error) {
+        console.error('Failed to parse command data:', error)
+      }
     }
-    
+
+    return NextResponse.json({ content: response })
+  } catch (error) {
+    console.error('Chat API error:', error)
     return NextResponse.json(
-      { error: 'There was an error processing your request' },
+      { error: 'Failed to process chat request' },
       { status: 500 }
-    );
+    )
   }
 } 

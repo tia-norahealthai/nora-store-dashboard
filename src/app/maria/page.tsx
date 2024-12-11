@@ -14,6 +14,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { MariaChat } from "@/components/maria-chat"
+import { MariaProvider } from "@/contexts/maria-context"
 
 export default function MariaPage() {
   return (
@@ -42,7 +43,9 @@ export default function MariaPage() {
           </div>
         </header>
         <div className="flex flex-1 flex-col">
-          <MariaChat />
+          <MariaProvider pageType="chat" initialData={null}>
+            <MariaChat />
+          </MariaProvider>
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
+import { ReduxProvider } from '@/providers/redux-provider'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,7 +31,9 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://use.typekit.net/qoe4nom.css" />
       </head>
       <body className="antialiased">
-        {children}
+        <ReduxProvider>
+          {children}
+        </ReduxProvider>
         <Toaster />
       </body>
     </html>

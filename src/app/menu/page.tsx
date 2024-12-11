@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { MenuItems } from "@/components/menu-items"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { MenuItemData } from "@/components/menu-item-data"
 
 export default function MenuPage() {
   return (

@@ -18,8 +18,18 @@ import { BarChart3, Users, DollarSign, ArrowUpRight } from "lucide-react"
 import { RecentOrders } from "@/components/recent-orders"
 import { TopCustomers } from "@/components/top-customers"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { DashboardMetricsData } from '@/components/dashboard-metrics'
 
 export default function Page() {
+  // This would typically come from your API/database
+  const dashboardMetrics = {
+    revenue: 125000.00,
+    activeUsers: 1250,
+    conversionRate: 3.2,
+    pendingOrders: 45,
+    totalOrders: 1890
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -71,6 +81,7 @@ export default function Page() {
         </div>
       </SidebarInset>
       <ChatSidebar />
+      <DashboardMetricsData metrics={dashboardMetrics} />
     </SidebarProvider>
   )
 }
