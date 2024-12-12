@@ -40,16 +40,9 @@ export interface OrderItem {
   notes?: string
 }
 
-interface MenuItem {
-  name: string
-  price: string
-  category: string
-  description: string
-}
-
 type MenuAction = {
   type: 'ADD_MENU_ITEM'
   payload: MenuItem
 }
 
-type Actions = MenuAction | /* your other action types */ 
+type Actions = MenuAction
