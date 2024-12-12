@@ -58,6 +58,59 @@ export interface Database {
           category: string
         }
       }
+      restaurants: {
+        Row: {
+          id: string
+          name: string
+          address: string
+          logo_url: string | null
+          phone: string | null
+          email: string | null
+          website: string | null
+          business_hours: {
+            [key: string]: {
+              open: string
+              close: string
+            }
+          } | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          address: string
+          logo_url?: string | null
+          phone?: string | null
+          email?: string | null
+          website?: string | null
+          business_hours?: {
+            [key: string]: {
+              open: string
+              close: string
+            }
+          } | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          address?: string
+          logo_url?: string | null
+          phone?: string | null
+          email?: string | null
+          website?: string | null
+          business_hours?: {
+            [key: string]: {
+              open: string
+              close: string
+            }
+          } | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 } 

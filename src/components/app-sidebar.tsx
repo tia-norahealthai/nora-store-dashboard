@@ -83,6 +83,11 @@ const data = {
           url: "/invoices",
           icon: Frame,
         },
+        {
+          title: "Restaurants",
+          url: "/restaurants",
+          icon: Store,
+        },
       ]
     },
     {

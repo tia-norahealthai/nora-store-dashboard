@@ -160,5 +160,97 @@ export const db = {
         allergens: item.nutritional_info?.allergens
       })) || []
     }
+  },
+  restaurants: {
+    async getAll() {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      return data
+    },
+
+    async getById(id: string) {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+
+    async create(restaurant: Database['public']['Tables']['restaurants']['Insert']) {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .insert([restaurant])
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+
+    async update(id: string, updates: Database['public']['Tables']['restaurants']['Update']) {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+
+    async delete(id: string) {
+      const { error } = await supabase
+        .from('restaurants')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      return true
+    },
+
+    async getMetrics() {
+      const { data: restaurants, error } = await supabase
+        .from('restaurants')
+        .select('*')
+
+      if (error) throw error
+
+      const totalLocations = restaurants.length
+      const cities = new Set(restaurants.map(r => r.address.split(',')[1]?.trim())).size
+      
+      // Calculate average hours open
+      const avgHours = restaurants.reduce((acc, restaurant) => {
+        if (!restaurant.business_hours) return acc
+        const hours = Object.values(restaurant.business_hours).reduce((sum, { open, close }) => {
+          const openTime = new Date(`1970-01-01T${open}:00`)
+          const closeTime = new Date(`1970-01-01T${close}:00`)
+          return sum + (closeTime.getTime() - openTime.getTime()) / (1000 * 60 * 60)
+        }, 0)
+        return acc + (hours / Object.keys(restaurant.business_hours).length)
+      }, 0) / restaurants.length
+
+      // Count digital platforms (website + email = digital presence)
+      const digitalPlatforms = restaurants.reduce((acc, r) => {
+        let platforms = 0
+        if (r.website) platforms++
+        if (r.email) platforms++
+        return acc + platforms
+      }, 0)
+
+      return {
+        totalLocations,
+        avgHours: Math.round(avgHours),
+        cities,
+        digitalPlatforms
+      }
+    }
   }
 } 
