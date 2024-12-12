@@ -71,7 +71,7 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
         {filteredItems.map((item) => (
           <div
             key={item.id}
-            className="group relative rounded-lg border p-4 hover:border-foreground/50 cursor-pointer"
+            className="group relative rounded-lg border hover:border-foreground/50 cursor-pointer"
             onClick={(e) => handleItemClick(e, item.id)}
           >
             <Card className="overflow-hidden">

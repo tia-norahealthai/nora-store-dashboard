@@ -3,6 +3,17 @@ import { useStore } from '@/store'
 import { db } from '@/lib/supabase/db'
 import type { MenuItem } from '@/types/store'
 
+interface CreateMenuItemParams {
+  name: string;
+  price: string;
+  category: string;
+  description: string;
+  image_url?: string;
+  status?: string;
+  ingredients?: string[];
+  preparation_time?: number;
+}
+
 export function useMenu() {
   const store = useStore()
   

@@ -19,6 +19,7 @@ import { RecentOrders } from "@/components/recent-orders"
 import { TopCustomers } from "@/components/top-customers"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { DashboardMetricsData } from '@/components/dashboard-metrics'
+import { OpportunitiesRecap } from "@/components/opportunities-recap"
 
 export default function Page() {
   // This would typically come from your API/database
@@ -75,6 +76,10 @@ export default function Page() {
             />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
+            <OpportunitiesRecap 
+              percentage={35} 
+              missedRevenue={12450}
+            />
             <RecentOrders />
             <TopCustomers />
           </div>
