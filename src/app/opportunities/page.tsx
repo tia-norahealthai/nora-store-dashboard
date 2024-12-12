@@ -20,6 +20,7 @@ import { TrendingUp, ShoppingBag, Users, ArrowUpRight } from "lucide-react"
 import { RecommendedAction } from "@/components/recommended-action"
 import { Suspense } from "react"
 import { MariaProvider } from "@/contexts/maria-context"
+import { GrowthPotentialCard } from "@/components/growth-potential-card"
 
 function RecommendedActions() {
   return (
@@ -87,32 +88,12 @@ export default function OpportunitiesPage() {
               showPerformanceChart={true}
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-              <Card className="h-[240px]">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2  text-2xl font-semibold">
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                    Growth Potential
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-2xl font-bold">+24%</p>
-                      <p className="text-sm text-muted-foreground">Potential revenue increase</p>
-                    </div>
-                    <ul className="space-y-2 text-base text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <ArrowUpRight className="h-4 w-4 text-green-500" />
-                        Average order value could increase by $15
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <ArrowUpRight className="h-4 w-4 text-green-500" />
-                        Customer retention potential: 15% higher
-                      </li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
+              <GrowthPotentialCard
+                potentialIncrease={24}
+                orderValueIncrease={15}
+                retentionIncrease={15}
+                className="h-[240px]"
+              />
               <Card className="h-[240px]">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2  text-2xl font-semibold">

@@ -109,11 +109,11 @@ const getMedalColor = (index: number) => {
 
 export function TopCustomers() {
   return (
-    <Card>
+    <Card className="h-[600px] flex flex-col">
       <CardHeader>
         <CardTitle className="text-2xl">Top Customers</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-auto">
         <div className="space-y-4">
           {mockTopCustomers.slice(0, 10).map((customer, index) => (
             <div

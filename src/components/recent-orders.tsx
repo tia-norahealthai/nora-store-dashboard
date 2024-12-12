@@ -150,57 +150,63 @@ interface RecentOrdersProps {
   }[]
 }
 
-export function RecentOrders({ orders = recentOrders }: RecentOrdersProps) {
+const RecentOrders = ({ orders = recentOrders }: RecentOrdersProps) => {
   const router = useRouter()
 
-  const handleViewDetails = (orderId: string) => {
-    router.push(`/orders/${orderId}`)
-  }
-
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-lg border p-4">
+      <h2 className="text-lg font-semibold mb-4">Recent Orders</h2>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Customer</TableHead>
             <TableHead>Product</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead>Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map((order) => (
-            <TableRow 
+            <TableRow
               key={order.id}
               className="cursor-pointer"
-              onClick={() => handleViewDetails(order.id)}
+              onClick={() => router.push(`/orders/${order.id}`)}
             >
               <TableCell className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <span className="text-xs">{order.customer.avatar}</span>
+                  <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                    {order.customer.avatar}
+                  </div>
                 </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-medium">{order.customer.name}</span>
-                  <span className="text-sm text-muted-foreground">
+                <div>
+                  <div className="font-medium">{order.customer.name}</div>
+                  <div className="text-sm text-muted-foreground">
                     {order.customer.email}
-                  </span>
+                  </div>
                 </div>
               </TableCell>
               <TableCell>{order.product}</TableCell>
               <TableCell>
-                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                  order.status === "completed" 
-                    ? "bg-green-50 text-green-700" 
-                    : "bg-yellow-50 text-yellow-700"
-                }`}>
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                    order.status === "completed"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-yellow-50 text-yellow-700"
+                  }`}
+                >
                   {order.status}
                 </span>
               </TableCell>
-              <TableCell className="text-right">{order.amount}</TableCell>
+              <TableCell>{order.amount}</TableCell>
+              <TableCell>{order.date}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
   )
-} 
+}
+
+export { RecentOrders }
+export default RecentOrders 

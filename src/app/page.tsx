@@ -20,6 +20,7 @@ import { TopCustomers } from "@/components/top-customers"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { DashboardMetricsData } from '@/components/dashboard-metrics'
 import { OpportunitiesRecap } from "@/components/opportunities-recap"
+import { GrowthPotentialCard } from "@/components/growth-potential-card"
 
 export default function Page() {
   // This would typically come from your API/database
@@ -48,40 +49,47 @@ export default function Page() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard
-              title="Total Revenue"
-              value="$45,231.89"
-              description="Monthly revenue"
-              icon={DollarSign}
-              trend="up"
-              trendValue="+20.1% from last month"
-            />
-            <MetricCard
-              title="Active Users"
-              value="2,350"
-              description="Active users this month"
-              icon={Users}
-              trend="down"
-              trendValue="-4% from last month"
-            />
-            <MetricCard
-              title="Conversion Rate"
-              value="3.2%"
-              description="Average conversion rate"
-              icon={BarChart3}
-              trend="up"
-              trendValue="+2.4% from last month"
-            />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <OpportunitiesRecap 
-              percentage={35} 
-              missedRevenue={12450}
-            />
-            <RecentOrders />
-            <TopCustomers />
+        <div className="flex-1 overflow-auto">
+          <div className="flex flex-col gap-4 p-4 pt-0">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <MetricCard
+                title="Total Revenue"
+                value="$45,231.89"
+                description="Monthly revenue"
+                icon={DollarSign}
+                trend="up"
+                trendValue="+20.1% from last month"
+              />
+              <MetricCard
+                title="Active Users"
+                value="2,350"
+                description="Active users this month"
+                icon={Users}
+                trend="down"
+                trendValue="-4% from last month"
+              />
+              <MetricCard
+                title="Conversion Rate"
+                value="3.2%"
+                description="Average conversion rate"
+                icon={BarChart3}
+                trend="up"
+                trendValue="+2.4% from last month"
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <OpportunitiesRecap 
+                percentage={35} 
+                missedRevenue={12450}
+              />
+              <GrowthPotentialCard
+                potentialIncrease={24}
+                orderValueIncrease={15}
+                retentionIncrease={15}
+              />
+              <RecentOrders />
+              <TopCustomers />
+            </div>
           </div>
         </div>
       </SidebarInset>
