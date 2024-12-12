@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { SuggestedQueries } from "./suggested-queries"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useMariaContext } from "@/contexts/maria-context"
 import { useStore } from '@/store'
 import { useMenu } from '@/hooks/useMenu'
@@ -47,6 +47,85 @@ const PAGE_SPECIFIC_DATA: { [key: string]: () => PageData } = {
   })
 }
 
+// Add this mock responses object
+const MOCK_ACTION_RESPONSES: { [key: string]: string } = {
+  "set up smart bundles": `I'll help you set up smart product bundles based on purchase history. Here's the implementation plan:
+
+1. Analyze Purchase Patterns
+   • Review top-selling items
+   • Identify frequently combined products
+   • Calculate optimal bundle pricing
+
+2. Create Bundle Templates
+   • Design 3-5 starter bundles
+   • Set up dynamic pricing rules
+   • Configure bundle presentation
+
+3. Implementation Steps
+   • Enable bundle feature in POS
+   • Set up automated recommendations
+   • Train staff on bundle promotions
+
+Would you like to start with analyzing your current purchase patterns?`,
+
+  "schedule peak-time promotions": `I'll help you create targeted promotions for your peak hours. Here's the implementation plan:
+
+1. Traffic Analysis
+   • Review hourly sales data
+   • Identify peak periods
+   • Map customer segments to timeframes
+
+2. Promotion Design
+   • Create time-specific offers
+   • Set up dynamic pricing
+   • Design promotional materials
+
+3. Implementation
+   • Configure automated price changes
+   • Set up notification system
+   • Train staff on peak-time procedures
+
+Shall we start by analyzing your current traffic patterns?`,
+
+  "upgrade loyalty rewards": `I'll help you design a new tier-based loyalty program. Here's the implementation plan:
+
+1. Program Structure
+   • Define tier levels (e.g., Silver, Gold, Platinum)
+   • Set tier requirements
+   • Design tier-specific benefits
+
+2. Reward System
+   • Calculate point values
+   • Set up reward categories
+   • Create special tier perks
+
+3. Implementation
+   • Update loyalty software
+   • Migrate existing customers
+   • Train staff on new program
+
+Would you like to start by reviewing your current loyalty program data?`,
+
+  "enable smart recommendations": `I'll help you set up AI-powered product recommendations. Here's the implementation plan:
+
+1. Data Collection
+   • Gather purchase history
+   • Analyze customer preferences
+   • Set up tracking metrics
+
+2. System Configuration
+   • Set up recommendation engine
+   • Configure algorithms
+   • Define trigger points
+
+3. Implementation
+   • Enable recommendation features
+   • Set up display rules
+   • Train staff on the system
+
+Should we begin by reviewing your current customer data?`
+}
+
 export function MariaChat() {
   const [messages, setMessages] = useState<Message[]>([{
     id: 'welcome',
@@ -62,6 +141,7 @@ export function MariaChat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const mariaContext = useMariaContext()
   const dispatch = useStore((state) => state.dispatch)
@@ -195,6 +275,26 @@ export function MariaChat() {
     setInput("")
 
     try {
+      // Check if this is a recommended action query
+      const actionKey = Object.keys(MOCK_ACTION_RESPONSES).find(key => 
+        content.toLowerCase().includes(key)
+      )
+
+      // If it's a recommended action, use the mock response
+      if (actionKey) {
+        setTimeout(() => {
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            content: MOCK_ACTION_RESPONSES[actionKey],
+            role: 'assistant',
+            timestamp: new Date()
+          }])
+          setIsLoading(false)
+        }, 1000) // Add a small delay to simulate API call
+        return
+      }
+
+      // Otherwise, proceed with the regular API call
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -227,7 +327,6 @@ export function MariaChat() {
     } catch (error) {
       console.error('Chat error:', error)
       
-      // Add error message to chat
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         content: "Sorry, I encountered an error. Please try again or rephrase your request.",
@@ -245,6 +344,22 @@ export function MariaChat() {
     }
   }
 
+  // Handle custom events for pre-filled messages
+  useEffect(() => {
+    const handlePrefilledMessage = async (event: CustomEvent) => {
+      const message = event.detail
+      setInput(message)
+      // Automatically send the message
+      await sendMessage(message)
+    }
+
+    window.addEventListener('maria-send-message', handlePrefilledMessage as EventListener)
+    
+    return () => {
+      window.removeEventListener('maria-send-message', handlePrefilledMessage as EventListener)
+    }
+  }, []) // Note: sendMessage is now used inside useEffect
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     sendMessage(input)
@@ -253,6 +368,17 @@ export function MariaChat() {
   const handleQuerySelect = (prompt: string) => {
     sendMessage(prompt)
   }
+
+  // Handle URL query parameter
+  useEffect(() => {
+    const queryParam = searchParams.get('query')
+    if (queryParam) {
+      const decodedQuery = decodeURIComponent(queryParam)
+      setInput(decodedQuery)
+      // Optionally auto-submit the query
+      handleSubmit(new Event('submit') as any, decodedQuery)
+    }
+  }, [searchParams])
 
   return (
     <div className="flex flex-col h-full">

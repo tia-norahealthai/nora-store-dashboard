@@ -89,6 +89,17 @@ export function MariaProvider({
           store.menu.setItems(items)
           break
 
+        case 'openChat':
+          if (window.location.pathname === '/maria') {
+            window.dispatchEvent(new CustomEvent('maria-send-message', {
+              detail: data.initialMessage
+            }))
+          } else {
+            const query = encodeURIComponent(data.initialMessage)
+            window.location.href = `/maria?query=${query}`
+          }
+          break
+
         default:
           console.warn(`Unknown command: ${command}`)
           return

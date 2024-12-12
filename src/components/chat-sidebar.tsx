@@ -29,7 +29,7 @@ export function ChatSidebar() {
     if (basePath === "customers" && isDetailPage) return "customer_details"
     if (basePath === "orders" && isDetailPage) return "order_details"
     
-    return "dashboard"
+    return basePath as PageType || "dashboard"
   }
 
   return (

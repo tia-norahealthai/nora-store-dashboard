@@ -16,8 +16,46 @@ import {
 import { OpportunitiesRecap } from "@/components/opportunities-recap"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChatSidebar } from "@/components/chat-sidebar"
-import { ArrowUpRight, TrendingUp, ShoppingBag, Users } from "lucide-react"
-import { PerformanceChart } from "@/components/performance-chart"
+import { TrendingUp, ShoppingBag, Users, ArrowUpRight } from "lucide-react"
+import { RecommendedAction } from "@/components/recommended-action"
+import { Suspense } from "react"
+import { MariaProvider } from "@/contexts/maria-context"
+
+function RecommendedActions() {
+  return (
+    <MariaProvider pageType="opportunities" initialData={null}>
+      <div className="space-y-2">
+        {/* <p className="text-lg font-semibold">Recommended Actions</p> */}
+        <ul className="space-y-4 text-base">
+          <li>
+            <RecommendedAction
+              title="Set Up Smart Bundles"
+              description="Configure automated product bundles based on purchase history"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Schedule Peak-Time Promotions"
+              description="Launch targeted promotions during your highest traffic hours"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Upgrade Loyalty Rewards"
+              description="Design and launch new tier-based loyalty rewards program"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Enable Smart Recommendations"
+              description="Activate AI-powered product suggestions for each customer"
+            />
+          </li>
+        </ul>
+      </div>
+    </MariaProvider>
+  )
+}
 
 export default function OpportunitiesPage() {
   return (
@@ -124,60 +162,9 @@ export default function OpportunitiesPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid gap-8 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold">Top Missed Opportunities</p>
-                        <ul className="space-y-4 text-base">
-                          <li>
-                            <p className="font-semibold">Bundle Offers</p>
-                            <p className="text-muted-foreground">Bundle offers not presented to eligible customers</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Seasonal Promotions</p>
-                            <p className="text-muted-foreground">Seasonal promotions missed during peak hours</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Loyalty Program</p>
-                            <p className="text-muted-foreground">Loyalty program upgrades not suggested</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Premium Products</p>
-                            <p className="text-muted-foreground">Premium product alternatives not offered</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Customer Engagement</p>
-                            <p className="text-muted-foreground">Follow-up engagement not initiated</p>
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold">Recommended Actions</p>
-                        <ul className="space-y-4 text-base">
-                          <li>
-                            <p className="font-semibold">Automation System</p>
-                            <p className="text-muted-foreground">Implement automated bundle suggestions</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Promotion Timing</p>
-                            <p className="text-muted-foreground">Set up time-based promotion triggers</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Loyalty Notifications</p>
-                            <p className="text-muted-foreground">Create loyalty program notification system</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Product Recommendations</p>
-                            <p className="text-muted-foreground">Develop product recommendation engine</p>
-                          </li>
-                          <li>
-                            <p className="font-semibold">Follow-up System</p>
-                            <p className="text-muted-foreground">Establish follow-up communication workflow</p>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+                  <Suspense fallback={<div>Loading recommendations...</div>}>
+                    <RecommendedActions />
+                  </Suspense>
                 </CardContent>
               </Card>
             </div>
