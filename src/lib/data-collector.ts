@@ -243,3 +243,17 @@ export async function getCustomerById(id: string) {
 
   return customer
 } 
+
+export async function getCustomerMetrics() {
+  // Implement the logic to fetch these metrics from your database
+  return {
+    totalCustomers: 2420,
+    newCustomers: 185,
+    averageOrderValue: 249,
+    orderValueTrend: 12.5,
+    retentionRate: 86,
+    retentionTrend: 2.4,
+    monthlyOrders: 1652,
+    ordersTrend: 8.1
+  }
+}
