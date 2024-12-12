@@ -146,6 +146,7 @@ export function MariaChat() {
   const mariaContext = useMariaContext()
   const dispatch = useStore((state) => state.dispatch)
   const { createMenuItem } = useMenu()
+  const [isTyping, setIsTyping] = useState(false)
   
   // Memoize the context data function to prevent infinite loops
   const getContextData = useCallback(() => {
@@ -260,10 +261,48 @@ export function MariaChat() {
     }
   }
 
+  // Add typing indicator handling
+  useEffect(() => {
+    const handleTypingStart = () => setIsTyping(true)
+    const handleTypingEnd = () => setIsTyping(false)
+
+    window.addEventListener('maria-typing-start', handleTypingStart)
+    window.addEventListener('maria-typing-end', handleTypingEnd)
+    
+    return () => {
+      window.removeEventListener('maria-typing-start', handleTypingStart)
+      window.removeEventListener('maria-typing-end', handleTypingEnd)
+    }
+  }, [])
+
+  const simulateTypingResponse = (content: string) => {
+    return new Promise<void>((resolve) => {
+      // Calculate typing duration based on content length (1 char = ~30ms)
+      const typingDuration = Math.min(Math.max(content.length * 30, 1000), 3000)
+      
+      setIsTyping(true)
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          content,
+          role: 'assistant',
+          timestamp: new Date()
+        }])
+        setIsTyping(false)
+        resolve()
+      }, typingDuration)
+    })
+  }
+
   const sendMessage = async (content: string) => {
     if (!content.trim()) return
 
     setIsLoading(true)
+    
+    // Remove welcome message if it's still there
+    setMessages(prev => prev.filter(msg => msg.id !== 'welcome'))
+    
     const newMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -282,19 +321,13 @@ export function MariaChat() {
 
       // If it's a recommended action, use the mock response
       if (actionKey) {
-        setTimeout(() => {
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            content: MOCK_ACTION_RESPONSES[actionKey],
-            role: 'assistant',
-            timestamp: new Date()
-          }])
-          setIsLoading(false)
-        }, 1000) // Add a small delay to simulate API call
+        await simulateTypingResponse(MOCK_ACTION_RESPONSES[actionKey])
+        setIsLoading(false)
         return
       }
 
       // Otherwise, proceed with the regular API call
+      setIsTyping(true)
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -317,22 +350,14 @@ export function MariaChat() {
         throw new Error(data.error)
       }
 
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        content: data.content,
-        role: 'assistant',
-        timestamp: new Date()
-      }])
+      await simulateTypingResponse(data.content)
 
     } catch (error) {
       console.error('Chat error:', error)
       
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        content: "Sorry, I encountered an error. Please try again or rephrase your request.",
-        role: 'assistant',
-        timestamp: new Date()
-      }])
+      await simulateTypingResponse(
+        "Sorry, I encountered an error. Please try again or rephrase your request."
+      )
 
       toast({
         title: "Error",
@@ -341,6 +366,7 @@ export function MariaChat() {
       })
     } finally {
       setIsLoading(false)
+      setIsTyping(false)
     }
   }
 
@@ -425,6 +451,22 @@ export function MariaChat() {
               </div>
             </div>
           ))}
+          
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8">
+                <Bot className="h-5 w-5 text-primary" />
+              </Avatar>
+              <div className="rounded-lg px-4 py-2 max-w-[80%] bg-muted text-foreground">
+                <div className="flex gap-2 items-center">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

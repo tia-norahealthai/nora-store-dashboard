@@ -10,14 +10,21 @@ interface RecommendedActionProps {
 }
 
 export function RecommendedAction({ title, description }: RecommendedActionProps) {
+  const mariaContext = useMariaContext()
+  
   const handleAskMaria = () => {
     // Format the query to ask Maria about implementation steps
     const query = `Show me how to ${title.toLowerCase()}. Here's what I want to achieve: ${description}`
     
-    // Automatically send the message to Maria chat
-    window.dispatchEvent(new CustomEvent('maria-send-message', {
-      detail: query
-    }))
+    // First dispatch typing start event
+    window.dispatchEvent(new CustomEvent('maria-typing-start'))
+    
+    // Then send the message after a small delay to simulate natural flow
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('maria-send-message', {
+        detail: query
+      }))
+    }, 500) // Small delay before sending message
   }
 
   return (
