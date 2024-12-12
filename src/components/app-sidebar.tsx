@@ -19,7 +19,7 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+// import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -27,172 +27,135 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 // This is sample data.
 const data = {
   user: {
-    name: "Pierangelo Raiola",
-    email: "pierangelo.raiola@norahealth.ai",
+    name: "Avo Admin",
+    email: "admin@avo.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Nora Health AI",
-      logo: GalleryVerticalEnd,
-      plan: "Business",
-    },
-    {
-      name: "Nora Health AI",
-      logo: AudioWaveform,
-      plan: "Ownership",
-    },
-    {
-      name: "Nora Health AI",
-      logo: Command,
-      plan: "Developer",
-    },
-  ],
+  // teams: [
+  //   {
+  //     name: "Nora Health AI",
+  //     logo: GalleryVerticalEnd,
+  //     plan: "Business",
+  //   },
+  //   {
+  //     name: "Nora Health AI",
+  //     logo: AudioWaveform,
+  //     plan: "Ownership",
+  //   },
+  //   {
+  //     name: "Nora Health AI",
+  //     logo: Command,
+  //     plan: "Developer",
+  //   },
+  // ],
   navMain: [
     {
-      title: "Analytics",
+      title: "Dashboard",
       url: "/",
       icon: SquareTerminal,
+    },
+    {
+      title: "Business",
       items: [
-        {
-          title: "Dashboard",
-          url: "/",
-        },
         {
           title: "Opportunities",
           url: "/opportunities",
+          icon: PieChart,
         },
         {
           title: "Orders",
           url: "/orders",
+          icon: Store,
         },
         {
           title: "Customers",
           url: "/customers",
+          icon: MessageSquare,
         },
         {
           title: "Invoices",
           url: "/invoices",
+          icon: Frame,
         },
-      ],
+      ]
     },
     {
-      title: "Store",
-      url: "#",
-      icon: Store,
+      title: "Restaurant",
       items: [
         {
           title: "Menu",
           url: "/menu",
+          icon: Store,
         },
-        {
-          title: "Promotions",
-          url: "#",
-        },
-        {
-          title: "Locations",
-          url: "#",
-        },
-        {
-          title: "Feedbacks",
-          url: "/feedbacks",
-        },
-      ],
+      ]
     },
     {
-      title: "MarIA Assistant",
-      url: "/maria",
-      icon: Bot,
+      title: "AI Assistant",
       items: [
         {
           title: "Chat with MarIA",
           url: "/maria",
+          icon: Bot,
         },
         {
           title: "Chat History",
           url: "/maria/history",
+          icon: MessageSquare,
         },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+      ]
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
     },
   ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
+  // projects: [
+  //   {
+  //     name: "Design Engineering",
+  //     url: "#",
+  //     icon: Frame,
+  //   },
+  //   {
+  //     name: "Sales & Marketing",
+  //     url: "#",
+  //     icon: PieChart,
+  //   },
+  //   {
+  //     name: "Travel",
+  //     url: "#",
+  //     icon: Map,
+  //   },
+  // ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <div className="flex items-center gap-2 px-4 py-2">
+          <Image
+            src="/nora-logo.svg"
+            alt="Nora Logo"
+            width={120}
+            height={80}
+            className={cn(
+              "transition-all duration-200",
+              props.collapsed && "w-6 h-6"
+            )}
+          />
+          {/* <TeamSwitcher teams={data.teams} /> */}
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

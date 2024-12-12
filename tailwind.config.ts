@@ -68,8 +68,11 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		fontFamily: {
-  			sans: ["degular-display", "sans-serif"],
-  		},
+  			sans: [
+  				'degular-display',
+  				'sans-serif'
+  			]
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

@@ -15,16 +15,17 @@ import { ChatSidebar } from "@/components/chat-sidebar"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { formatDate } from "@/lib/utils"
+import Link from "next/link"
+import { CustomerOrdersTable } from "@/components/customer-orders-table"
 
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: Promise<{ id: string }> | { id: string }
+  params: { id: string }
 }
 
 export default async function CustomerPage({ params }: PageProps) {
-  const resolvedParams = await params
-  const customer = await getCustomerById(resolvedParams.id)
+  const customer = await getCustomerById(params.id)
   
   if (!customer) {
     notFound()
@@ -103,25 +104,35 @@ export default async function CustomerPage({ params }: PageProps) {
 
             <Card className="p-6">
               <div className="mb-4">
+                <h2 className="text-lg font-semibold">Budget Information</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Drinks Budget</Label>
+                  <p className="text-lg font-medium">
+                    ${customer.drinks_budget?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Meals Budget</Label>
+                  <p className="text-lg font-medium">
+                    ${customer.meals_budget?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Snacks Budget</Label>
+                  <p className="text-lg font-medium">
+                    ${customer.snacks_budget?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <div className="mb-4 p-6 pb-0">
                 <h2 className="text-lg font-semibold">Order History</h2>
               </div>
-              {customer.orders && customer.orders.length > 0 ? (
-                <div className="space-y-4">
-                  {customer.orders.map((order: any) => (
-                    <div key={order.id} className="border-b pb-2">
-                      <p className="font-medium">Order #{order.id}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(order.created_at)}
-                      </p>
-                      <p className="text-sm">
-                        Status: <span className="capitalize">{order.status}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No orders yet</p>
-              )}
+              <CustomerOrdersTable orders={customer.orders || []} />
             </Card>
           </div>
         </div>
