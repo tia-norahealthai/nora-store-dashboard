@@ -135,7 +135,11 @@ const data = {
   // ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  collapsed?: boolean
+}
+
+export function AppSidebar({ collapsed, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -147,7 +151,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             height={80}
             className={cn(
               "transition-all duration-200",
-              props.collapsed && "w-6 h-6"
+              collapsed && "w-6 h-6"
             )}
           />
           {/* <TeamSwitcher teams={data.teams} /> */}
