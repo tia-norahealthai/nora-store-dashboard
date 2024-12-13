@@ -24,6 +24,7 @@ import type { MenuItem } from '@/types/store'
 import Image from "next/image"
 import { useMariaContext } from "@/contexts/maria-context"
 import { AddMenuItemForm } from './add-menu-item-form'
+import { CsvUpload } from './csv-upload'
 
 interface MenuItemsProps {
   initialItems: MenuItem[]
@@ -95,7 +96,10 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
             <Filter className="h-4 w-4" />
           </Button>
         </div>
-        <AddMenuItemForm />
+        <div className="flex items-center gap-4">
+          <CsvUpload />
+          <AddMenuItemForm />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
