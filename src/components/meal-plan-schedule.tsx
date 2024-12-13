@@ -78,6 +78,25 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
 
         if (menuError) throw menuError
         setMenuItems(menuData || [])
+
+        const { data: mealPlanItems, error: mealPlanError } = await supabase
+          .from('meal_plan_items')
+          .select('day, daytime, menu_item_id')
+          .eq('meal_plan_id', mealPlanId)
+
+        if (mealPlanError) throw mealPlanError
+
+        const existingSelections = mealPlanItems.reduce((acc, item) => {
+          return {
+            ...acc,
+            [item.day]: {
+              ...(acc[item.day] || {}),
+              [item.daytime]: item.menu_item_id
+            }
+          }
+        }, {} as Record<string, Record<string, string>>)
+
+        setSelections(existingSelections)
       } catch (err) {
         toast.error('Failed to load data')
         console.error('Error fetching data:', err)
@@ -85,7 +104,7 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     }
 
     fetchData()
-  }, [supabase, customerId])
+  }, [supabase, customerId, mealPlanId])
 
   const hasAllergenConflict = (menuItem: MenuItem) => {
     return menuItem.allergens?.some(allergen => 
