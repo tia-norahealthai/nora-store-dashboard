@@ -15,14 +15,12 @@ import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import Image from 'next/image'
 
 interface MenuItem {
   id: string
   name: string
   allergens: string[]
   category: string
-  image_url: string
 }
 
 interface MealPlanScheduleProps {
@@ -33,23 +31,7 @@ interface MealPlanScheduleProps {
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const TIMES = ['morning', 'afternoon', 'evening']
-const PLACEHOLDER_IMAGE = '/images/placeholder-dish.jpg'
-
-function isValidUrl(url: string) {
-  try {
-    new URL(url)
-    return true
-  } catch {
-    return false
-  }
-}
-
-function getImageUrl(imageUrl: string | null) {
-  if (!imageUrl) return PLACEHOLDER_IMAGE
-  if (imageUrl.startsWith('http') && isValidUrl(imageUrl)) return imageUrl
-  if (imageUrl.startsWith('/')) return imageUrl
-  return PLACEHOLDER_IMAGE
-}
+const ITEM_TYPES = ['meal', 'snack', 'drink'] as const
 
 export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPlanScheduleProps) {
   const [selectedDay, setSelectedDay] = useState(DAYS[0])
@@ -78,25 +60,6 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
 
         if (menuError) throw menuError
         setMenuItems(menuData || [])
-
-        const { data: mealPlanItems, error: mealPlanError } = await supabase
-          .from('meal_plan_items')
-          .select('day, daytime, menu_item_id')
-          .eq('meal_plan_id', mealPlanId)
-
-        if (mealPlanError) throw mealPlanError
-
-        const existingSelections = mealPlanItems.reduce((acc, item) => {
-          return {
-            ...acc,
-            [item.day]: {
-              ...(acc[item.day] || {}),
-              [item.daytime]: item.menu_item_id
-            }
-          }
-        }, {} as Record<string, Record<string, string>>)
-
-        setSelections(existingSelections)
       } catch (err) {
         toast.error('Failed to load data')
         console.error('Error fetching data:', err)
@@ -104,7 +67,7 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     }
 
     fetchData()
-  }, [supabase, customerId, mealPlanId])
+  }, [supabase, customerId])
 
   const hasAllergenConflict = (menuItem: MenuItem) => {
     return menuItem.allergens?.some(allergen => 
@@ -112,7 +75,19 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     )
   }
 
-  const handleTimeSelection = (time: string, menuItemId: string) => {
+  const menuItemsByCategory = menuItems.reduce((acc, item) => {
+    const category = item.category.toLowerCase()
+    if (category.includes('drink')) {
+      acc.drink = [...(acc.drink || []), item]
+    } else if (category.includes('snack')) {
+      acc.snack = [...(acc.snack || []), item]
+    } else {
+      acc.meal = [...(acc.meal || []), item]
+    }
+    return acc
+  }, {} as Record<typeof ITEM_TYPES[number], MenuItem[]>)
+
+  const handleTimeSelection = (time: string, menuItemId: string, itemType: typeof ITEM_TYPES[number]) => {
     const menuItem = menuItems.find(item => item.id === menuItemId)
     if (menuItem && hasAllergenConflict(menuItem)) {
       toast.error('This menu item contains allergens that conflict with customer allergies')
@@ -123,7 +98,7 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
       ...prev,
       [selectedDay]: {
         ...(prev[selectedDay] || {}),
-        [time]: menuItemId
+        [`${time}_${itemType}`]: menuItemId
       }
     }))
   }
@@ -186,59 +161,51 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
           ))}
         </TabsList>
         {DAYS.map(day => (
-          <TabsContent key={day} value={day} className="space-y-4">
+          <TabsContent key={day} value={day} className="space-y-4 max-h-[60vh] overflow-y-auto">
             {TIMES.map(time => (
-              <div key={time} className="space-y-2">
-                <Label className="capitalize">{time}</Label>
-                <Select
-                  value={selections[day]?.[time] || ''}
-                  onValueChange={(value) => handleTimeSelection(time, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a menu item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {menuItems.map(item => {
-                      const hasConflict = hasAllergenConflict(item)
-                      return (
-                        <SelectItem 
-                          key={item.id} 
-                          value={item.id}
-                          disabled={hasConflict}
-                          className={cn(
-                            hasConflict && "text-destructive relative pl-8",
-                            "flex items-center gap-2 py-2"
-                          )}
-                        >
-                          {hasConflict && (
-                            <AlertCircle className="h-4 w-4 absolute left-2" />
-                          )}
-                          <div className="flex items-center gap-2 w-full">
-                            <div className="relative h-6 w-6 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                              {item.image_url && (
-                                <Image
-                                  src={getImageUrl(item.image_url)}
-                                  alt={item.name}
-                                  fill
-                                  className="object-cover"
-                                  sizes="24px"
-                                />
+              <div key={time} className="space-y-4">
+                <Label className="capitalize font-bold sticky top-0 bg-background py-2">
+                  {time}
+                </Label>
+                {ITEM_TYPES.map(itemType => (
+                  <div key={itemType} className="space-y-2 pl-4">
+                    <Label className="capitalize">{itemType}</Label>
+                    <Select
+                      value={selections[day]?.[`${time}_${itemType}`] || ''}
+                      onValueChange={(value) => handleTimeSelection(time, value, itemType)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select a ${itemType}`} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px]">
+                        {(menuItemsByCategory[itemType] || []).map(item => {
+                          const hasConflict = hasAllergenConflict(item)
+                          return (
+                            <SelectItem 
+                              key={item.id} 
+                              value={item.id}
+                              disabled={hasConflict}
+                              className={cn(
+                                hasConflict && "text-destructive relative pl-8",
+                                "flex items-center"
                               )}
-                            </div>
-                            <div className="flex flex-row items-center gap-2 flex-1">
-                              <span className="font-medium">{item.name}</span>
+                            >
                               {hasConflict && (
-                                <span className="text-xs text-destructive whitespace-nowrap">
+                                <AlertCircle className="h-4 w-4 absolute left-2" />
+                              )}
+                              {item.name}
+                              {hasConflict && (
+                                <span className="ml-2 text-xs text-destructive">
                                   (Contains allergens)
                                 </span>
                               )}
-                            </div>
-                          </div>
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
               </div>
             ))}
           </TabsContent>
