@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { generateMealPlan } from '@/lib/meal-plan-generator'
+import { Progress } from "@/components/ui/progress"
+import { BudgetCard } from "@/components/budget-card"
 
 interface MenuItem {
   id: string
@@ -24,6 +26,13 @@ interface MenuItem {
   category: string
   type: 'Meal' | 'Snack' | 'Drink'
   image_url?: string
+  price: number
+}
+
+interface CustomerBudget {
+  meals_budget: number
+  snacks_budget: number
+  drinks_budget: number
 }
 
 interface MealPlanScheduleProps {
@@ -48,6 +57,11 @@ export function MealPlanSchedule({
   const [customerAllergens, setCustomerAllergens] = useState<string[]>([])
   const [selections, setSelections] = useState<Record<string, Record<string, string>>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [customerBudget, setCustomerBudget] = useState<CustomerBudget>({
+    meals_budget: 0,
+    snacks_budget: 0,
+    drinks_budget: 0
+  })
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -58,15 +72,22 @@ export function MealPlanSchedule({
       }
 
       try {
-        // Fetch customer allergens
+        // Fetch customer data including budgets
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
-          .select('allergens')
+          .select('allergens, meals_budget, snacks_budget, drinks_budget')
           .eq('id', customerId)
           .single()
 
         if (customerError) throw customerError
         setCustomerAllergens(customerData?.allergens || [])
+        
+        // Set budgets directly from database values
+        setCustomerBudget({
+          meals_budget: customerData?.meals_budget || 0,
+          snacks_budget: customerData?.snacks_budget || 0,
+          drinks_budget: customerData?.drinks_budget || 0
+        })
 
         // Fetch menu items
         const { data: menuData, error: menuError } = await supabase
@@ -181,8 +202,19 @@ export function MealPlanSchedule({
     }
 
     const menuItem = menuItems.find(item => item.id === menuItemId)
-    if (menuItem && hasAllergenConflict(menuItem)) {
+    
+    if (!menuItem) return
+
+    // Check allergens
+    if (hasAllergenConflict(menuItem)) {
       toast.error('This menu item contains allergens that conflict with customer allergies')
+      return
+    }
+
+    // Check budget
+    const budgetKey = `${itemType}s_budget` as keyof CustomerBudget
+    if (menuItem.price > customerBudget[budgetKey]) {
+      toast.error(`This item exceeds the maximum ${itemType} budget of $${customerBudget[budgetKey].toFixed(2)}`)
       return
     }
 
@@ -196,6 +228,23 @@ export function MealPlanSchedule({
   }
 
   const handleSave = async () => {
+    const violations = checkBudgetViolations(selections)
+    
+    if (violations.length > 0) {
+      toast.error(
+        <div className="space-y-2">
+          <p>Cannot save meal plan. The following items exceed budget limits:</p>
+          <ul className="list-disc pl-4">
+            {violations.map((violation, index) => (
+              <li key={index}>{violation}</li>
+            ))}
+          </ul>
+        </div>
+      )
+      return
+    }
+
+    setIsLoading(true)
     try {
       const { error: deleteError } = await supabase
         .from('meal_plan_items')
@@ -231,9 +280,8 @@ export function MealPlanSchedule({
       if (updateError) throw updateError
 
       return true
-    } catch (error) {
-      console.error('Error saving meal plan:', error)
-      throw error
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -299,65 +347,173 @@ export function MealPlanSchedule({
     }
   }
 
-  const handleAutoGenerate = async () => {
-    try {
-      // Create a copy of current selections
-      const newSelections = { ...selections }
-
-      // For each day
-      DAYS.forEach(day => {
-        // Initialize day if not exists
-        newSelections[day] = newSelections[day] || {}
-
-        // For each time period
-        TIMES.forEach(time => {
-          // For each item type
-          ITEM_TYPES.forEach(itemType => {
-            const timeTypeKey = `${time}_${itemType}`
-            
-            // Get available items of this type that don't conflict with allergens
-            const availableItems = menuItemsByCategory[itemType]?.filter(item => 
-              !hasAllergenConflict(item)
-            ) || []
-
-            if (availableItems.length > 0) {
-              // Select item based on customer preferences and variety
-              const selectedItem = selectAppropriateItem(availableItems, day, time, itemType)
-              
-              // Add to selections
-              newSelections[day][timeTypeKey] = selectedItem.id
-            }
-          })
-        })
-      })
-
-      setSelections(newSelections)
-      return newSelections // Return the selections for immediate saving
-    } catch (error) {
-      console.error('Error generating meal plan:', error)
-      throw error
+  const calculateCurrentCosts = (currentSelections: Record<string, Record<string, string>>) => {
+    const costs = {
+      meal: 0,
+      snack: 0,
+      drink: 0
     }
+
+    Object.values(currentSelections).forEach(daySelections => {
+      Object.entries(daySelections).forEach(([timeType, itemId]) => {
+        const [_, type] = timeType.split('_')
+        const item = menuItems.find(item => item.id === itemId)
+        if (item) {
+          costs[type as keyof typeof costs] += item.price
+        }
+      })
+    })
+
+    return costs
   }
 
   const selectAppropriateItem = (
     items: MenuItem[], 
     day: string, 
     time: string, 
-    itemType: typeof ITEM_TYPES[number]
-  ): MenuItem => {
-    // Avoid repeating items in the same day
-    const daySelections = selections[day] || {}
+    itemType: typeof ITEM_TYPES[number],
+    currentSelections: Record<string, Record<string, string>>
+  ): MenuItem | null => {
+    // Get budget limit for this type
+    const budgetKey = `${itemType}s_budget` as keyof CustomerBudget
+    const budgetLimit = customerBudget[budgetKey]
+    
+    // Filter items by price and previous filters
+    const daySelections = currentSelections[day] || {}
     const itemsUsedToday = new Set(Object.values(daySelections))
     
-    const availableItems = items.filter(item => !itemsUsedToday.has(item.id))
+    const affordableItems = items.filter(item => 
+      !itemsUsedToday.has(item.id) && 
+      item.price <= budgetLimit // Check against individual item budget limit
+    )
     
-    // If we have items that haven't been used today, prefer those
-    if (availableItems.length > 0) {
-      return availableItems[Math.floor(Math.random() * availableItems.length)]
+    if (affordableItems.length === 0) {
+      return null // No affordable items available
     }
     
-    // Otherwise, use any available item
-    return items[Math.floor(Math.random() * items.length)]
+    // Prefer items that don't exceed budget
+    return affordableItems[Math.floor(Math.random() * affordableItems.length)]
+  }
+
+  const handleAutoGenerate = async () => {
+    try {
+      const newSelections = { ...selections }
+
+      DAYS.forEach(day => {
+        newSelections[day] = newSelections[day] || {}
+
+        TIMES.forEach(time => {
+          ITEM_TYPES.forEach(itemType => {
+            const timeTypeKey = `${time}_${itemType}`
+            
+            const availableItems = menuItemsByCategory[itemType]?.filter(item => 
+              !hasAllergenConflict(item)
+            ) || []
+
+            if (availableItems.length > 0) {
+              const selectedItem = selectAppropriateItem(
+                availableItems, 
+                day, 
+                time, 
+                itemType,
+                newSelections
+              )
+              
+              if (selectedItem) {
+                newSelections[day][timeTypeKey] = selectedItem.id
+              } else {
+                toast.warning(`Could not find affordable ${itemType} for ${day} ${time}`)
+              }
+            }
+          })
+        })
+      })
+
+      // Calculate final costs
+      const finalCosts = calculateCurrentCosts(newSelections)
+      
+      // Check if we're within budget
+      const isWithinBudget = 
+        finalCosts.meal <= customerBudget.meals_budget &&
+        finalCosts.snack <= customerBudget.snacks_budget &&
+        finalCosts.drink <= customerBudget.drinks_budget
+
+      if (!isWithinBudget) {
+        toast.warning('Some items could not be added due to budget constraints')
+      }
+
+      setSelections(newSelections)
+      return newSelections
+    } catch (error) {
+      console.error('Error generating meal plan:', error)
+      throw error
+    }
+  }
+
+  // Add this function to check if an item exceeds budget
+  const checkBudgetViolations = (selections: Record<string, Record<string, string>>) => {
+    const violations: string[] = []
+
+    Object.entries(selections).forEach(([day, daySelections]) => {
+      Object.entries(daySelections).forEach(([timeType, itemId]) => {
+        const [daytime, type] = timeType.split('_')
+        const item = menuItems.find(item => item.id === itemId)
+        const budgetKey = `${type}s_budget` as keyof CustomerBudget
+        
+        if (item && item.price > customerBudget[budgetKey]) {
+          violations.push(`${item.name} (${day} ${daytime}) exceeds ${type} budget of $${customerBudget[budgetKey].toFixed(2)}`)
+        }
+      })
+    })
+
+    return violations
+  }
+
+  // Add this function to calculate weekly totals
+  const calculateWeeklyTotals = (currentSelections: Record<string, Record<string, string>>) => {
+    const totals = {
+      meals: { count: 0, cost: 0 },
+      snacks: { count: 0, cost: 0 },
+      drinks: { count: 0, cost: 0 }
+    }
+
+    Object.values(currentSelections).forEach(daySelections => {
+      Object.entries(daySelections).forEach(([timeType, itemId]) => {
+        const [_, type] = timeType.split('_')
+        const item = menuItems.find(item => item.id === itemId)
+        if (item) {
+          const category = `${type}s` as keyof typeof totals
+          totals[category].count++
+          totals[category].cost += item.price
+        }
+      })
+    })
+
+    return totals
+  }
+
+  // Add this function to get the selected item's cost for the current day and time
+  const getCurrentSelectionCost = (type: typeof ITEM_TYPES[number], time: string) => {
+    const timeTypeKey = `${time}_${type}`
+    const selectedItemId = selections[selectedDay]?.[timeTypeKey]
+    const selectedItem = menuItems.find(item => item.id === selectedItemId)
+    return selectedItem?.price || 0
+  }
+
+  // Add this helper function to calculate percentage
+  const calculatePercentage = (current: number, max: number) => {
+    return Math.min((current / max) * 100, 100)
+  }
+
+  // Add this function to calculate current day's total
+  const getCurrentDayTotal = (type: typeof ITEM_TYPES[number]) => {
+    const daySelections = selections[selectedDay] || {}
+    return Object.entries(daySelections)
+      .filter(([timeType]) => timeType.endsWith(type))
+      .reduce((total, [_, itemId]) => {
+        const item = menuItems.find(item => item.id === itemId)
+        return total + (item?.price || 0)
+      }, 0)
   }
 
   // Only show the UI if it's not a new plan being auto-generated
@@ -374,6 +530,33 @@ export function MealPlanSchedule({
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <BudgetCard
+          title="Meals"
+          maxBudget={customerBudget.meals_budget}
+          currentSelection={getCurrentSelectionCost('meal', TIMES[0])}
+          dailyTotal={getCurrentDayTotal('meal')}
+          weeklyTotal={calculateWeeklyTotals(selections).meals.cost}
+          itemCount={calculateWeeklyTotals(selections).meals.count}
+        />
+        <BudgetCard
+          title="Snacks"
+          maxBudget={customerBudget.snacks_budget}
+          currentSelection={getCurrentSelectionCost('snack', TIMES[0])}
+          dailyTotal={getCurrentDayTotal('snack')}
+          weeklyTotal={calculateWeeklyTotals(selections).snacks.cost}
+          itemCount={calculateWeeklyTotals(selections).snacks.count}
+        />
+        <BudgetCard
+          title="Drinks"
+          maxBudget={customerBudget.drinks_budget}
+          currentSelection={getCurrentSelectionCost('drink', TIMES[0])}
+          dailyTotal={getCurrentDayTotal('drink')}
+          weeklyTotal={calculateWeeklyTotals(selections).drinks.cost}
+          itemCount={calculateWeeklyTotals(selections).drinks.count}
+        />
+      </div>
+
       <div className="flex justify-between items-center">
         <div className="space-x-2">
           {!isNewPlan && (
