@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,48 +12,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { createClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { Database } from '@/types/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-function convertToUnsplashImageUrl(url: string): string {
-  if (!url) return '/images/placeholder-dish.jpg';
-  
-  const allowedDomains = [
-    'xyhqystoebgvqjqgmqng.supabase.co',
-    'images.unsplash.com',
-    'images.squarespace-cdn.com',
-    'xtra-static-content.s3.us-east-1.amazonaws.com'
-  ]
-  
-  try {
-    const urlObj = new URL(url);
-    
-    // Check if domain is allowed
-    if (allowedDomains.includes(urlObj.hostname)) {
-      return url;
-    }
-    
-    // Special handling for Unsplash URLs
-    if (urlObj.hostname === 'unsplash.com' && urlObj.pathname.includes('/photos/')) {
-      const photoId = urlObj.pathname.split('/').pop()?.split('-')[0] || '';
-      return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
-    }
-    
-    console.warn(`Image domain not allowed: ${urlObj.hostname}`);
-    return '/images/placeholder-dish.jpg';
-  } catch (error) {
-    console.warn('Invalid image URL:', url);
-    return '/images/placeholder-dish.jpg';
-  }
+interface AddMenuItemFormProps {
+  restaurantId: string
 }
 
-export function AddMenuItemForm() {
+export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClientComponentClient<Database>();
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,10 +34,11 @@ export function AddMenuItemForm() {
       description: formData.get('description'),
       price: parseFloat(formData.get('price') as string),
       category: formData.get('category'),
-      image_url: convertToUnsplashImageUrl(formData.get('image_url') as string),
+      image_url: formData.get('image_url'),
       status: 'active',
       ingredients: (formData.get('ingredients') as string).split(',').map(i => i.trim()),
       preparation_time: parseInt(formData.get('preparation_time') as string),
+      restaurant_id: restaurantId
     };
 
     try {

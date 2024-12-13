@@ -18,13 +18,16 @@ import {
   Plus,
   Trash2,
   Edit,
-  Filter
+  Filter,
+  Store
 } from "lucide-react"
 import type { MenuItem } from '@/types/store'
 import Image from "next/image"
 import { useMariaContext } from "@/contexts/maria-context"
 import { AddMenuItemForm } from './add-menu-item-form'
 import { CsvUpload } from './csv-upload'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Database } from '@/types/supabase'
 
 interface MenuItemsProps {
   initialItems: MenuItem[]
@@ -62,44 +65,81 @@ const getValidImageUrl = (url?: string) => {
 }
 
 export function MenuItems({ initialItems }: MenuItemsProps) {
-  const [items, setItems] = useState<MenuItem[]>(initialItems)
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialItems)
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [restaurants, setRestaurants] = useState<Record<string, string>>({})
+  const supabase = createClientComponentClient<Database>()
   const router = useRouter()
-  const mariaContext = useMariaContext()
 
-  // Filter items based on search query
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Fetch restaurant names for all menu items
+  useEffect(() => {
+    async function fetchRestaurants() {
+      const restaurantIds = Array.from(new Set(menuItems.map(item => item.restaurant_id)))
+      
+      if (restaurantIds.length === 0) return
 
-  const handleItemClick = (e: React.MouseEvent, itemId: string) => {
-    // Prevent click event from bubbling up when clicking dropdown
-    if ((e.target as HTMLElement).closest('.dropdown-trigger')) {
-      e.stopPropagation()
-      return
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('id, name')
+        .in('id', restaurantIds)
+
+      if (error) {
+        console.error('Error fetching restaurants:', error)
+        return
+      }
+
+      const restaurantMap = Object.fromEntries(
+        data.map(restaurant => [restaurant.id, restaurant.name])
+      )
+      setRestaurants(restaurantMap)
     }
-    router.push(`/menu/${itemId}`)
-  }
+
+    fetchRestaurants()
+  }, [menuItems, supabase])
+
+  const categories = Array.from(new Set(menuItems.map(item => item.category))).filter(Boolean)
+
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = !selectedCategory || item.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search menu items..."
+            className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-[300px]"
           />
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
         </div>
-        <div className="flex items-center gap-4">
-          <CsvUpload />
-          <AddMenuItemForm />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-[150px]">
+              <Filter className="mr-2 h-4 w-4" />
+              {selectedCategory || "All Categories"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setSelectedCategory(null)}>
+              All Categories
+            </DropdownMenuItem>
+            {categories.map((category) => (
+              <DropdownMenuItem
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -107,7 +147,6 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
           <div
             key={item.id}
             className="group relative rounded-lg border hover:border-foreground/50 cursor-pointer"
-            onClick={(e) => handleItemClick(e, item.id)}
           >
             <Card className="overflow-hidden">
               <CardHeader className="border-b p-0">
@@ -120,72 +159,35 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover"
                       priority={false}
-                      onError={(e) => {
-                        // Fallback to placeholder on error
-                        const imgElement = e.target as HTMLImageElement;
-                        imgElement.src = '/images/placeholder-dish.jpg';
-                      }}
                     />
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="space-y-1">
                     <h3 className="font-semibold">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.category}</p>
+                    <div 
+                      className="flex items-center text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/restaurants/${item.restaurant_id}`)
+                      }}
+                    >
+                      <Store className="h-3 w-3 mr-1" />
+                      {restaurants[item.restaurant_id] || 'Loading...'}
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {item.description}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">${item.price.toFixed(2)}</Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="dropdown-trigger"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent 
-                        align="end"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/menu/${item.id}`)
-                        }}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-600"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <Badge variant="secondary">${item.price.toFixed(2)}</Badge>
                 </div>
-                {item.description && (
-                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
               </CardContent>
             </Card>
           </div>
         ))}
       </div>
-
-      {filteredItems.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
-          <p className="text-lg font-semibold">No menu items found</p>
-          <p className="text-sm">Try adjusting your search or add new items</p>
-        </div>
-      )}
     </div>
   )
 } 

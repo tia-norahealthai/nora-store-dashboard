@@ -14,15 +14,23 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Clock, MapPin, Phone, Mail, Globe } from "lucide-react"
+import { Clock, MapPin, Phone, Mail, Globe, Store, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { AddRestaurantForm } from "@/components/add-restaurant-form"
+import { useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 type Restaurant = Database['public']['Tables']['restaurants']['Row']
 
 export function RestaurantsTable() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   const loadRestaurants = async () => {
     try {
@@ -64,53 +72,53 @@ export function RestaurantsTable() {
         </TableHeader>
         <TableBody>
           {restaurants.map((restaurant) => (
-            <TableRow key={restaurant.id}>
-              <TableCell className="font-medium">{restaurant.name}</TableCell>
-              <TableCell>
+            <TableRow 
+              key={restaurant.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => router.push(`/restaurants/${restaurant.id}`)}
+            >
+              <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  {restaurant.address}
+                  <Store className="h-4 w-4 text-muted-foreground" />
+                  {restaurant.name}
                 </div>
               </TableCell>
+              <TableCell>{restaurant.address}</TableCell>
               <TableCell>
-                <div className="space-y-1">
-                  {restaurant.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {restaurant.phone}
-                    </div>
-                  )}
-                  {restaurant.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {restaurant.email}
-                    </div>
-                  )}
-                  {restaurant.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a href={restaurant.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        {new URL(restaurant.website).hostname}
-                      </a>
-                    </div>
-                  )}
-                </div>
+                {restaurant.phone || restaurant.email}
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  {restaurant.business_hours?.monday.open} - {restaurant.business_hours?.monday.close}
-                </div>
+                {restaurant.business_hours?.monday?.open} - {restaurant.business_hours?.monday?.close}
               </TableCell>
               <TableCell>
                 <Badge>Active</Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/restaurants/${restaurant.id}`}>
-                    View Details
-                  </Link>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/restaurants/${restaurant.id}`)
+                      }}
+                    >
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        // Add edit functionality
+                      }}
+                    >
+                      Edit restaurant
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}

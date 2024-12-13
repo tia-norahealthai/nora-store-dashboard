@@ -1,9 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Make sure these environment variables are available
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL')
+}
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
 export const db = {
@@ -59,41 +67,28 @@ export const db = {
         .distinct()) as { data: { category: string }[] }
       return data?.length || 0
     },
-    async getItems() {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select(`
-          id,
-          name,
-          description,
-          price,
-          category,
-          image_url,
-          dietary,
-          allergens,
-          ingredients,
-          preparation_time,
-          created_at,
-          updated_at,
-          calories,
-          protein,
-          carbohydrates,
-          fat,
-          fiber,
-          restaurant_id,
-          type,
-          cuisine_type,
-          average_rating,
-          added_sugars,
-          processed_food,
-          dressing,
-          food_benefits,
-          healthy_score,
-          availability
-        `)
-      
-      if (error) throw error
-      return data
+    async getItems(options?: { filter?: { restaurant_id?: string } }) {
+      try {
+        const query = supabase
+          .from('menu_items')
+          .select('*')
+        
+        if (options?.filter?.restaurant_id) {
+          query.eq('restaurant_id', options.filter.restaurant_id)
+        }
+        
+        const { data, error } = await query.order('name')
+        
+        if (error) {
+          console.error('Supabase error:', error)
+          throw new Error(error.message)
+        }
+        
+        return data || []
+      } catch (error) {
+        console.error('Error in getItems:', error)
+        throw error
+      }
     },
 
     async getItem(id: string) {
