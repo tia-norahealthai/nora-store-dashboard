@@ -23,11 +23,12 @@ import { CustomerMealPlan } from "@/components/customer-meal-plan"
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function CustomerPage({ params }: PageProps) {
-  const customer = await getCustomerById(params.id)
+  const resolvedParams = await params
+  const customer = await getCustomerById(resolvedParams.id)
   
   if (!customer) {
     notFound()

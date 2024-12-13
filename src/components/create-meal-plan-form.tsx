@@ -12,18 +12,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import { MealPlanSchedule } from './meal-plan-schedule'
 
 interface CreateMealPlanFormProps {
   customerId: string
 }
 
+type Step = 'details' | 'schedule'
+
 export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
+  const [step, setStep] = useState<Step>('details')
   const [name, setName] = useState('')
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
   const [isLoading, setIsLoading] = useState(false)
   const [startDateDialogOpen, setStartDateDialogOpen] = useState(false)
   const [endDateDialogOpen, setEndDateDialogOpen] = useState(false)
+  const [mealPlanId, setMealPlanId] = useState<string>()
   
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -50,14 +55,23 @@ export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
 
       if (error) throw error
 
-      toast.success('Meal plan created successfully')
-      router.refresh()
+      setMealPlanId(data.id)
+      setStep('schedule')
+      toast.success('Meal plan created! Now let\'s add some meals.')
     } catch (error) {
       console.error('Error creating meal plan:', error)
       toast.error('Failed to create meal plan')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (step === 'schedule' && mealPlanId) {
+    return <MealPlanSchedule 
+      mealPlanId={mealPlanId} 
+      customerId={customerId}
+      onComplete={() => router.refresh()} 
+    />
   }
 
   return (
@@ -150,7 +164,7 @@ export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
       </div>
 
       <Button type="submit" disabled={isLoading} className="w-full">
-        {isLoading ? 'Creating...' : 'Create Meal Plan'}
+        {isLoading ? 'Creating...' : 'Continue to Menu Selection'}
       </Button>
     </form>
   )
