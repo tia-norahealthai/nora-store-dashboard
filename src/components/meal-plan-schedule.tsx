@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface MenuItem {
@@ -236,8 +236,70 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     }
   }
 
+  const handleAutoFill = () => {
+    setIsLoading(true)
+    try {
+      // Create a copy of current selections
+      const newSelections = { ...selections }
+
+      // For each day, time, and item type combination
+      DAYS.forEach(day => {
+        TIMES.forEach(time => {
+          ITEM_TYPES.forEach(itemType => {
+            const timeTypeKey = `${time}_${itemType}`
+            
+            // Skip if already selected
+            if (newSelections[day]?.[timeTypeKey]) return
+
+            // Get available items of this type
+            const availableItems = menuItemsByCategory[itemType]?.filter(item => 
+              !hasAllergenConflict(item)
+            ) || []
+
+            if (availableItems.length > 0) {
+              // Randomly select an item
+              const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)]
+              
+              // Add to selections
+              newSelections[day] = {
+                ...(newSelections[day] || {}),
+                [timeTypeKey]: randomItem.id
+              }
+            }
+          })
+        })
+      })
+
+      setSelections(newSelections)
+      toast.success('Empty slots have been automatically filled')
+    } catch (error) {
+      console.error('Error auto-filling meal plan:', error)
+      toast.error('Failed to auto-fill meal plan')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Button
+          variant="outline"
+          onClick={handleAutoFill}
+          disabled={isLoading}
+          className="gap-2"
+        >
+          <Wand2 className="h-4 w-4" />
+          Auto-fill Empty Slots
+        </Button>
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+        >
+          {isLoading ? 'Saving...' : 'Save Meal Plan'}
+        </Button>
+      </div>
+
       <Tabs value={selectedDay} onValueChange={setSelectedDay}>
         <TabsList className="grid grid-cols-7">
           {DAYS.map(day => (
