@@ -51,108 +51,70 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
       }
 
       try {
-        console.log('Checking meal plan:', mealPlanId)
-        const { data: mealPlanExists, error: mealPlanCheckError } = await supabase
-          .from('meal_plans')
-          .select('id')
-          .eq('id', mealPlanId)
-          .single()
-
-        if (mealPlanCheckError) {
-          console.error('Meal plan check error:', mealPlanCheckError)
-          if (mealPlanCheckError.code !== 'PGRST116') {
-            throw mealPlanCheckError
-          }
-        }
-
-        console.log('Fetching customer data:', customerId)
+        // Fetch customer allergens
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .select('allergens')
           .eq('id', customerId)
           .single()
 
-        if (customerError) {
-          console.error('Customer fetch error:', customerError)
-          throw customerError
-        }
+        if (customerError) throw customerError
         setCustomerAllergens(customerData?.allergens || [])
 
-        console.log('Fetching menu items')
+        // Fetch menu items
         const { data: menuData, error: menuError } = await supabase
           .from('menu_items')
-          .select('id, name, description, price, type, allergens, image_url')
+          .select('id, name, description, price, type, allergens, image_url, category')
 
-        if (menuError) {
-          console.error('Menu items fetch error:', menuError)
-          throw menuError
-        }
-        
-        console.log('Menu items fetched:', menuData?.length || 0, 'items')
+        if (menuError) throw menuError
         setMenuItems(menuData || [])
 
-        // Only try to fetch meal plan items if we confirmed the meal plan exists
-        if (mealPlanExists) {
-          console.log('Fetching meal plan items for:', mealPlanId)
-          const { data: mealPlanData, error: mealPlanError } = await supabase
-            .from('meal_plan_items')
-            .select(`
-              menu_item_id,
-              day,
-              daytime,
-              menu_items (
-                id,
-                name,
-                type,
-                allergens
-              )
-            `)
-            .eq('meal_plan_id', mealPlanId)
+        // Fetch existing meal plan items
+        const { data: mealPlanData, error: mealPlanError } = await supabase
+          .from('meal_plan_items')
+          .select(`
+            id,
+            menu_item_id,
+            day,
+            daytime,
+            menu_items (
+              id,
+              name,
+              type,
+              allergens,
+              category
+            )
+          `)
+          .eq('meal_plan_id', mealPlanId)
 
-          if (mealPlanError) {
-            console.error('Meal plan items fetch error:', mealPlanError)
-            throw mealPlanError
-          }
+        if (mealPlanError) throw mealPlanError
 
-          console.log('Meal plan items fetched:', mealPlanData?.length || 0, 'items')
-          if (mealPlanData) {
-            const existingSelections = mealPlanData.reduce((acc, item) => {
-              const day = item.day
-              const menuItem = item.menu_items
-              const timeType = `${item.daytime}_${menuItem.type.toLowerCase()}`
-              return {
-                ...acc,
-                [day]: {
-                  ...(acc[day] || {}),
-                  [timeType]: item.menu_item_id
-                }
+        // Transform meal plan items into selections state
+        if (mealPlanData) {
+          const existingSelections = mealPlanData.reduce((acc, item) => {
+            const day = item.day
+            const menuItem = item.menu_items
+            const timeType = `${item.daytime}_${menuItem.type.toLowerCase()}`
+            return {
+              ...acc,
+              [day]: {
+                ...(acc[day] || {}),
+                [timeType]: item.menu_item_id
               }
-            }, {} as Record<string, Record<string, string>>)
+            }
+          }, {} as Record<string, Record<string, string>>)
 
-            console.log('Setting selections:', existingSelections)
-            setSelections(existingSelections)
-          }
-        } else {
-          console.log('New meal plan - no existing items to fetch')
+          setSelections(existingSelections)
         }
+
       } catch (err: any) {
-        console.error('Detailed error:', {
-          message: err.message,
-          code: err.code,
-          details: err.details,
-          hint: err.hint,
-          stack: err.stack
-        })
-        
-        // Only show error for non-404 errors
-        if (err.code !== 'PGRST116') {
-          toast.error(`Failed to load data: ${err.message || 'Unknown error'}`)
-        }
+        console.error('Error fetching data:', err)
+        toast.error(`Failed to load data: ${err.message}`)
       }
     }
 
     fetchData()
-  }, [supabase, customerId, mealPlanId])
+  }, [mealPlanId, customerId, supabase])
 
   const hasAllergenConflict = (menuItem: MenuItem) => {
     return menuItem.allergens?.some(allergen => 
@@ -291,28 +253,36 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
                 <Label className="capitalize font-bold sticky top-0 bg-background py-2">
                   {time}
                 </Label>
-                {ITEM_TYPES.map(itemType => (
-                  <div key={itemType} className="space-y-2 pl-4">
-                    <Label className="capitalize">{itemType}</Label>
-                    <Select
-                      value={selections[day]?.[`${time}_${itemType}`] || 'placeholder'}
-                      onValueChange={(value) => handleTimeSelection(time, value, itemType)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={`Select a ${itemType}`} />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="max-h-[200px] overflow-y-auto"
-                        position="popper"
-                        align="start"
-                        side="bottom"
-                        sideOffset={5}
+                {ITEM_TYPES.map(itemType => {
+                  const timeTypeKey = `${time}_${itemType}`
+                  const selectedItemId = selections[day]?.[timeTypeKey]
+                  const selectedItem = selectedItemId ? menuItems.find(item => item.id === selectedItemId) : null
+                  
+                  return (
+                    <div key={itemType} className="space-y-2 pl-4">
+                      <Label className="capitalize">{itemType}</Label>
+                      <Select
+                        value={selectedItemId || ""}
+                        onValueChange={(value) => handleTimeSelection(time, value, itemType)}
                       >
-                        <SelectItem value="placeholder" className="text-muted-foreground">
-                          Select a {itemType}
-                        </SelectItem>
-                        <div className="overflow-y-auto">
-                          {(menuItemsByCategory[itemType] || []).map(item => {
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Select a ${itemType}`}>
+                            {selectedItem && (
+                              <div className="flex items-center gap-2">
+                                {selectedItem.image_url && (
+                                  <img 
+                                    src={getValidImageUrl(selectedItem.image_url)}
+                                    alt={selectedItem.name}
+                                    className="h-6 w-6 object-cover rounded-sm"
+                                  />
+                                )}
+                                {selectedItem.name}
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {menuItemsByCategory[itemType]?.map(item => {
                             const hasConflict = hasAllergenConflict(item)
                             return (
                               <SelectItem 
@@ -320,8 +290,8 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
                                 value={item.id}
                                 disabled={hasConflict}
                                 className={cn(
-                                  hasConflict && "text-destructive relative pl-8",
-                                  "flex items-center gap-2 py-2"
+                                  "flex items-center gap-2",
+                                  hasConflict && "text-destructive relative pl-8"
                                 )}
                               >
                                 {hasConflict && (
@@ -345,11 +315,11 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
                               </SelectItem>
                             )
                           })}
-                        </div>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </TabsContent>
