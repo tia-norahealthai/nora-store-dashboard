@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/supabase'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,10 +53,10 @@ export const db = {
       return count
     },
     async getCategoriesCount() {
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('menu_items')
         .select('category')
-        .distinct()
+        .distinct()) as { data: { category: string }[] }
       return data?.length || 0
     },
     async getItems() {
@@ -68,12 +69,27 @@ export const db = {
           price,
           category,
           image_url,
-          status,
+          dietary,
+          allergens,
           ingredients,
-          nutritional_info,
           preparation_time,
           created_at,
-          updated_at
+          updated_at,
+          calories,
+          protein,
+          carbohydrates,
+          fat,
+          fiber,
+          restaurant_id,
+          type,
+          cuisine_type,
+          average_rating,
+          added_sugars,
+          processed_food,
+          dressing,
+          food_benefits,
+          healthy_score,
+          availability
         `)
       
       if (error) throw error
@@ -83,7 +99,35 @@ export const db = {
     async getItem(id: string) {
       const { data, error } = await supabase
         .from('menu_items')
-        .select('*')
+        .select(`
+          id,
+          name,
+          description,
+          price,
+          category,
+          image_url,
+          dietary,
+          allergens,
+          ingredients,
+          preparation_time,
+          created_at,
+          updated_at,
+          calories,
+          protein,
+          carbohydrates,
+          fat,
+          fiber,
+          restaurant_id,
+          type,
+          cuisine_type,
+          average_rating,
+          added_sugars,
+          processed_food,
+          dressing,
+          food_benefits,
+          healthy_score,
+          availability
+        `)
         .eq('id', id)
         .single()
       
@@ -134,31 +178,44 @@ export const db = {
           price,
           category,
           image_url,
-          status,
+          dietary,
+          allergens,
           ingredients,
-          nutritional_info,
           preparation_time,
-          created_at,
-          updated_at
+          calories,
+          protein,
+          carbohydrates,
+          fat,
+          fiber,
+          type,
+          cuisine_type,
+          added_sugars,
+          processed_food,
+          food_benefits,
+          healthy_score
         `)
       
       if (error) {
-        console.error('Error fetching menu items with nutrition:', error)
+        console.error('Error fetching menu items:', error)
         throw error
       }
 
       return data?.map(item => ({
         ...item,
-        calories: item.nutritional_info?.calories,
-        protein: item.nutritional_info?.protein,
-        carbohydrates: item.nutritional_info?.carbohydrates,
-        fat: item.nutritional_info?.fat,
-        fiber: item.nutritional_info?.fiber,
-        is_vegetarian: item.nutritional_info?.is_vegetarian,
-        is_vegan: item.nutritional_info?.is_vegan,
-        is_gluten_free: item.nutritional_info?.is_gluten_free,
-        allergens: item.nutritional_info?.allergens
+        is_vegetarian: item.dietary?.includes('vegetarian') || false,
+        is_vegan: item.dietary?.includes('vegan') || false,
+        is_gluten_free: item.dietary?.includes('gluten-free') || false
       })) || []
+    },
+
+    async createBulk(items: any[]) {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .insert(items)
+        .select()
+
+      if (error) throw error
+      return { data, error }
     }
   },
   restaurants: {
@@ -183,7 +240,16 @@ export const db = {
       return data
     },
 
-    async create(restaurant: Database['public']['Tables']['restaurants']['Insert']) {
+    async select(columns: string) {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select(columns)
+      
+      if (error) throw error
+      return { data, error: null }
+    },
+
+    async create(restaurant: Omit<Restaurant, 'id'>) {
       const { data, error } = await supabase
         .from('restaurants')
         .insert([restaurant])
@@ -194,7 +260,7 @@ export const db = {
       return data
     },
 
-    async update(id: string, updates: Database['public']['Tables']['restaurants']['Update']) {
+    async update(id: string, updates: Partial<Restaurant>) {
       const { data, error } = await supabase
         .from('restaurants')
         .update(updates)
@@ -226,14 +292,15 @@ export const db = {
       const totalLocations = restaurants.length
       const cities = new Set(restaurants.map(r => r.address.split(',')[1]?.trim())).size
       
-      // Calculate average hours open
-      const avgHours = restaurants.reduce((acc, restaurant) => {
+      // Calculate average hours open with proper typing
+      const avgHours = restaurants.reduce((acc: number, restaurant) => {
         if (!restaurant.business_hours) return acc
-        const hours = Object.values(restaurant.business_hours).reduce((sum, { open, close }) => {
-          const openTime = new Date(`1970-01-01T${open}:00`)
-          const closeTime = new Date(`1970-01-01T${close}:00`)
-          return sum + (closeTime.getTime() - openTime.getTime()) / (1000 * 60 * 60)
-        }, 0)
+        const hours = Object.values(restaurant.business_hours as Record<string, { open: string; close: string }>)
+          .reduce((sum: number, { open, close }) => {
+            const openTime = new Date(`1970-01-01T${open}:00`)
+            const closeTime = new Date(`1970-01-01T${close}:00`)
+            return sum + (closeTime.getTime() - openTime.getTime()) / (1000 * 60 * 60)
+          }, 0)
         return acc + (hours / Object.keys(restaurant.business_hours).length)
       }, 0) / restaurants.length
 

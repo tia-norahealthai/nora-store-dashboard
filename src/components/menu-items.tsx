@@ -29,6 +29,37 @@ interface MenuItemsProps {
   initialItems: MenuItem[]
 }
 
+// Update the getValidImageUrl function
+const getValidImageUrl = (url?: string) => {
+  if (!url) return '/images/placeholder-dish.jpg'
+  
+  const allowedDomains = [
+    'xyhqystoebgvqjqgmqng.supabase.co',
+    'images.unsplash.com',
+    'images.squarespace-cdn.com',
+    'xtra-static-content.s3.us-east-1.amazonaws.com'
+  ]
+  
+  try {
+    // Handle relative URLs
+    if (url.startsWith('/')) {
+      return url
+    }
+    
+    // Handle absolute URLs
+    const urlObj = new URL(url)
+    if (allowedDomains.includes(urlObj.hostname)) {
+      return url
+    }
+    
+    console.warn(`Image domain not allowed: ${urlObj.hostname}`)
+    return '/images/placeholder-dish.jpg'
+  } catch (error) {
+    console.warn('Invalid image URL:', url)
+    return '/images/placeholder-dish.jpg'
+  }
+}
+
 export function MenuItems({ initialItems }: MenuItemsProps) {
   const [items, setItems] = useState<MenuItem[]>(initialItems)
   const [searchQuery, setSearchQuery] = useState("")
@@ -77,18 +108,21 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
             <Card className="overflow-hidden">
               <CardHeader className="border-b p-0">
                 <div className="aspect-video relative bg-muted">
-                  {item.image_url && (
-                    <div className="relative w-full h-48">
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover"
-                        priority={false}
-                      />
-                    </div>
-                  )}
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={getValidImageUrl(item.image_url)}
+                      alt={item.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover"
+                      priority={false}
+                      onError={(e) => {
+                        // Fallback to placeholder on error
+                        const imgElement = e.target as HTMLImageElement;
+                        imgElement.src = '/images/placeholder-dish.jpg';
+                      }}
+                    />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4">

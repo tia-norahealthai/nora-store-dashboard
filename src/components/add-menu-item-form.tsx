@@ -18,20 +18,34 @@ const supabase = createClient(
 );
 
 function convertToUnsplashImageUrl(url: string): string {
+  if (!url) return '/images/placeholder-dish.jpg';
+  
+  const allowedDomains = [
+    'xyhqystoebgvqjqgmqng.supabase.co',
+    'images.unsplash.com',
+    'images.squarespace-cdn.com',
+    'xtra-static-content.s3.us-east-1.amazonaws.com'
+  ]
+  
   try {
-    if (url.includes('images.unsplash.com')) {
+    const urlObj = new URL(url);
+    
+    // Check if domain is allowed
+    if (allowedDomains.includes(urlObj.hostname)) {
       return url;
     }
     
-    if (url.includes('unsplash.com/photos/')) {
-      const photoId = url.split('/').pop()?.split('-')[0] || '';
+    // Special handling for Unsplash URLs
+    if (urlObj.hostname === 'unsplash.com' && urlObj.pathname.includes('/photos/')) {
+      const photoId = urlObj.pathname.split('/').pop()?.split('-')[0] || '';
       return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
     }
     
-    return url;
+    console.warn(`Image domain not allowed: ${urlObj.hostname}`);
+    return '/images/placeholder-dish.jpg';
   } catch (error) {
-    console.error('Error converting image URL:', error);
-    return url;
+    console.warn('Invalid image URL:', url);
+    return '/images/placeholder-dish.jpg';
   }
 }
 
