@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { generateMealPlan } from '@/lib/meal-plan-generator'
 
 interface MenuItem {
   id: string
@@ -29,13 +30,19 @@ interface MealPlanScheduleProps {
   mealPlanId: string
   customerId: string
   onComplete: () => void
+  isNewPlan?: boolean
 }
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const TIMES = ['morning', 'afternoon', 'evening']
 const ITEM_TYPES = ['meal', 'snack', 'drink'] as const
 
-export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPlanScheduleProps) {
+export function MealPlanSchedule({ 
+  mealPlanId, 
+  customerId, 
+  onComplete,
+  isNewPlan = false 
+}: MealPlanScheduleProps) {
   const [selectedDay, setSelectedDay] = useState(DAYS[0])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [customerAllergens, setCustomerAllergens] = useState<string[]>([])
@@ -116,6 +123,26 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     fetchData()
   }, [mealPlanId, customerId, supabase])
 
+  useEffect(() => {
+    const initializeNewPlan = async () => {
+      if (isNewPlan && menuItems.length > 0) {
+        setIsLoading(true)
+        try {
+          await handleAutoGenerate()
+          await handleSave() // Automatically save after generation
+          onComplete() // Call onComplete to update the UI
+        } catch (error) {
+          console.error('Error initializing new plan:', error)
+          toast.error('Failed to initialize meal plan')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initializeNewPlan()
+  }, [isNewPlan, menuItems])
+
   const hasAllergenConflict = (menuItem: MenuItem) => {
     return menuItem.allergens?.some(allergen => 
       customerAllergens.includes(allergen)
@@ -169,17 +196,6 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
   }
 
   const handleSave = async () => {
-    const hasSelections = Object.keys(selections).length > 0 && 
-      Object.values(selections).some(daySelections => 
-        Object.keys(daySelections).length > 0
-      )
-
-    if (!hasSelections) {
-      toast.error('Please select at least one menu item')
-      return
-    }
-
-    setIsLoading(true)
     try {
       const { error: deleteError } = await supabase
         .from('meal_plan_items')
@@ -204,17 +220,20 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
         .from('meal_plan_items')
         .insert(items)
 
-      if (insertError) {
-        throw insertError
-      }
+      if (insertError) throw insertError
 
-      toast.success('Meal plan schedule updated successfully')
-      onComplete()
-    } catch (err: any) {
-      console.error('Error saving meal plan schedule:', err)
-      toast.error(err.message || 'Failed to save meal plan schedule')
-    } finally {
-      setIsLoading(false)
+      // Update meal plan status to completed
+      const { error: updateError } = await supabase
+        .from('meal_plans')
+        .update({ status: 'completed' })
+        .eq('id', mealPlanId)
+
+      if (updateError) throw updateError
+
+      return true
+    } catch (error) {
+      console.error('Error saving meal plan:', error)
+      throw error
     }
   }
 
@@ -280,24 +299,114 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
     }
   }
 
+  const handleAutoGenerate = async () => {
+    try {
+      // Create a copy of current selections
+      const newSelections = { ...selections }
+
+      // For each day
+      DAYS.forEach(day => {
+        // Initialize day if not exists
+        newSelections[day] = newSelections[day] || {}
+
+        // For each time period
+        TIMES.forEach(time => {
+          // For each item type
+          ITEM_TYPES.forEach(itemType => {
+            const timeTypeKey = `${time}_${itemType}`
+            
+            // Get available items of this type that don't conflict with allergens
+            const availableItems = menuItemsByCategory[itemType]?.filter(item => 
+              !hasAllergenConflict(item)
+            ) || []
+
+            if (availableItems.length > 0) {
+              // Select item based on customer preferences and variety
+              const selectedItem = selectAppropriateItem(availableItems, day, time, itemType)
+              
+              // Add to selections
+              newSelections[day][timeTypeKey] = selectedItem.id
+            }
+          })
+        })
+      })
+
+      setSelections(newSelections)
+      return newSelections // Return the selections for immediate saving
+    } catch (error) {
+      console.error('Error generating meal plan:', error)
+      throw error
+    }
+  }
+
+  const selectAppropriateItem = (
+    items: MenuItem[], 
+    day: string, 
+    time: string, 
+    itemType: typeof ITEM_TYPES[number]
+  ): MenuItem => {
+    // Avoid repeating items in the same day
+    const daySelections = selections[day] || {}
+    const itemsUsedToday = new Set(Object.values(daySelections))
+    
+    const availableItems = items.filter(item => !itemsUsedToday.has(item.id))
+    
+    // If we have items that haven't been used today, prefer those
+    if (availableItems.length > 0) {
+      return availableItems[Math.floor(Math.random() * availableItems.length)]
+    }
+    
+    // Otherwise, use any available item
+    return items[Math.floor(Math.random() * items.length)]
+  }
+
+  // Only show the UI if it's not a new plan being auto-generated
+  if (isNewPlan && isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-muted-foreground">Generating your meal plan...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <Button
-          variant="outline"
-          onClick={handleAutoFill}
-          disabled={isLoading}
-          className="gap-2"
-        >
-          <Wand2 className="h-4 w-4" />
-          Auto-fill Empty Slots
-        </Button>
-        <Button 
-          onClick={handleSave} 
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : 'Save Meal Plan'}
-        </Button>
+        <div className="space-x-2">
+          {!isNewPlan && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleAutoGenerate().then(handleSave)}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                Regenerate Plan
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleAutoFill}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                Auto-fill Empty Slots
+              </Button>
+            </>
+          )}
+        </div>
+        {!isNewPlan && (
+          <Button 
+            onClick={handleSave} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Meal Plan'}
+          </Button>
+        )}
       </div>
 
       <Tabs value={selectedDay} onValueChange={setSelectedDay}>

@@ -16,11 +16,12 @@ import { MealPlanSchedule } from './meal-plan-schedule'
 
 interface CreateMealPlanFormProps {
   customerId: string
+  onSuccess: (mealPlanId: string) => void
 }
 
 type Step = 'details' | 'schedule'
 
-export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
+export function CreateMealPlanForm({ customerId, onSuccess }: CreateMealPlanFormProps) {
   const [step, setStep] = useState<Step>('details')
   const [name, setName] = useState('')
   const [startDate, setStartDate] = useState<Date>()
@@ -42,22 +43,22 @@ export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
 
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data: mealPlan, error: createError } = await supabase
         .from('meal_plans')
         .insert({
           customer_id: customerId,
           name,
           start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
+          end_date: endDate.toISOString(),
+          status: 'draft'
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (createError) throw createError
 
-      setMealPlanId(data.id)
-      setStep('schedule')
-      toast.success('Meal plan created! Now let\'s add some meals.')
+      onSuccess(mealPlan.id)
+      toast.success('Meal plan created successfully')
     } catch (error) {
       console.error('Error creating meal plan:', error)
       toast.error('Failed to create meal plan')
@@ -164,7 +165,7 @@ export function CreateMealPlanForm({ customerId }: CreateMealPlanFormProps) {
       </div>
 
       <Button type="submit" disabled={isLoading} className="w-full">
-        {isLoading ? 'Creating...' : 'Continue to Menu Selection'}
+        {isLoading ? 'Creating...' : 'Create and Generate Plan'}
       </Button>
     </form>
   )

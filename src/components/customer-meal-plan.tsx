@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { CreateMealPlanForm } from '@/components/create-meal-plan-form'
 import { MealPlanSchedule } from '@/components/meal-plan-schedule'
-import { Plus, Calendar, Edit2, CheckCircle } from 'lucide-react'
+import { Plus, Calendar, Edit2, CheckCircle, Wand2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -81,6 +81,7 @@ export function CustomerMealPlan({ customerId }: CustomerMealPlanProps) {
           mealPlanId={mealPlan.id}
           customerId={customerId}
           onComplete={handleEditComplete}
+          isNewPlan={mealPlan.status === 'draft'}
         />
       </div>
     )
@@ -89,37 +90,55 @@ export function CustomerMealPlan({ customerId }: CustomerMealPlanProps) {
   return (
     <div>
       <div className="flex justify-end mb-4 gap-2">
-        {mealPlan && (
-          <Button 
-            variant="outline"
-            onClick={() => setIsEditMode(true)}
-          >
-            <Edit2 className="mr-2 h-4 w-4" />
-            Edit Schedule
-          </Button>
-        )}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              {mealPlan ? 'Replace Meal Plan' : 'Create Meal Plan'}
+        {mealPlan ? (
+          <>
+            {mealPlan.status === 'completed' && (
+              <Button 
+                variant="outline"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                Regenerate Plan
+              </Button>
+            )}
+            <Button 
+              variant="outline"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Edit2 className="mr-2 h-4 w-4" />
+              Edit Schedule
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {mealPlan ? 'Replace Meal Plan' : 'Create New Meal Plan'}
-              </DialogTitle>
-            </DialogHeader>
-            <CreateMealPlanForm 
-              customerId={customerId} 
-              onSuccess={() => {
-                setIsDialogOpen(false)
-                fetchMealPlan()
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+          </>
+        ) : (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Generate New Plan
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Meal Plan</DialogTitle>
+              </DialogHeader>
+              <CreateMealPlanForm 
+                customerId={customerId} 
+                onSuccess={(newMealPlanId) => {
+                  setIsDialogOpen(false)
+                  setMealPlan({
+                    id: newMealPlanId,
+                    name: 'New Meal Plan',
+                    start_date: new Date().toISOString(),
+                    end_date: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    status: 'draft'
+                  })
+                  setIsEditMode(true)
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
       
       {mealPlan ? (
