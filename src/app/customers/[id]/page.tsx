@@ -12,11 +12,13 @@ import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
-import { Card } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { CustomerOrdersTable } from "@/components/customer-orders-table"
+import { Calendar } from "lucide-react"
+import { CustomerMealPlan } from "@/components/customer-meal-plan"
 
 export const dynamic = 'force-dynamic'
 
@@ -34,8 +36,8 @@ export default async function CustomerPage({ params }: PageProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+      <SidebarInset className="overflow-auto">
+        <header className="sticky top-0 z-10 bg-background flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
@@ -56,7 +58,7 @@ export default async function CustomerPage({ params }: PageProps) {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="p-6">
               <div className="mb-4">
@@ -126,6 +128,18 @@ export default async function CustomerPage({ params }: PageProps) {
                   </p>
                 </div>
               </div>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Meal Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CustomerMealPlan customerId={customer.id} />
+              </CardContent>
             </Card>
 
             <Card className="md:col-span-2">
