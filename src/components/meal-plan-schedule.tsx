@@ -15,12 +15,14 @@ import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface MenuItem {
   id: string
   name: string
   allergens: string[]
   category: string
+  image_url: string
 }
 
 interface MealPlanScheduleProps {
@@ -31,6 +33,23 @@ interface MealPlanScheduleProps {
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const TIMES = ['morning', 'afternoon', 'evening']
+const PLACEHOLDER_IMAGE = '/images/placeholder-dish.jpg'
+
+function isValidUrl(url: string) {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function getImageUrl(imageUrl: string | null) {
+  if (!imageUrl) return PLACEHOLDER_IMAGE
+  if (imageUrl.startsWith('http') && isValidUrl(imageUrl)) return imageUrl
+  if (imageUrl.startsWith('/')) return imageUrl
+  return PLACEHOLDER_IMAGE
+}
 
 export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPlanScheduleProps) {
   const [selectedDay, setSelectedDay] = useState(DAYS[0])
@@ -169,18 +188,33 @@ export function MealPlanSchedule({ mealPlanId, customerId, onComplete }: MealPla
                           disabled={hasConflict}
                           className={cn(
                             hasConflict && "text-destructive relative pl-8",
-                            "flex items-center"
+                            "flex items-center gap-2 py-2"
                           )}
                         >
                           {hasConflict && (
                             <AlertCircle className="h-4 w-4 absolute left-2" />
                           )}
-                          {item.name}
-                          {hasConflict && (
-                            <span className="ml-2 text-xs text-destructive">
-                              (Contains allergens)
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 w-full">
+                            <div className="relative h-6 w-6 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                              {item.image_url && (
+                                <Image
+                                  src={getImageUrl(item.image_url)}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="24px"
+                                />
+                              )}
+                            </div>
+                            <div className="flex flex-row items-center gap-2 flex-1">
+                              <span className="font-medium">{item.name}</span>
+                              {hasConflict && (
+                                <span className="text-xs text-destructive whitespace-nowrap">
+                                  (Contains allergens)
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </SelectItem>
                       )
                     })}
