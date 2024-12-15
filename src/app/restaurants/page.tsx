@@ -22,6 +22,7 @@ import { RestaurantCard } from "@/components/restaurant-card"
 import { AddRestaurantForm } from "@/components/add-restaurant-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Store, Clock, MapPin, Globe } from "lucide-react"
+import { RestaurantHeader } from "@/components/restaurant-header"
 
 export const dynamic = 'force-dynamic'
 
@@ -31,23 +32,32 @@ export default async function RestaurantsPage() {
     cookies: () => cookieStore,
   })
   
-  // Fetch restaurants data
+  // Fetch restaurants data with orders count
   const { data: restaurants, error } = await supabase
     .from('restaurants')
-    .select('*')
+    .select(`
+      *,
+      orders:orders (count)
+    `)
     .order('name')
+
+  // Transform the data to include orders_count
+  const restaurantsWithCounts = restaurants?.map(restaurant => ({
+    ...restaurant,
+    orders_count: restaurant.orders?.count ?? 0
+  })) ?? []
 
   // Fetch metrics
   const { data: metricsData } = await supabase.rpc('get_restaurant_metrics')
-  const metrics = metricsData?.[0] ?? {
-    totalLocations: 0,
-    avgHours: 0,
-    cities: 0,
-    digitalPlatforms: 0,
+  const metrics = {
+    totalLocations: metricsData?.[0]?.total_locations ?? 0,
+    avgHours: metricsData?.[0]?.avg_hours ?? 0,
+    cities: metricsData?.[0]?.cities ?? 0,
+    digitalPlatforms: metricsData?.[0]?.digital_platforms ?? 0,
   }
 
   if (error) {
-    console.error('Error fetching restaurants:', error)
+    console.error('Error fetching restaurants:', error.message)
   }
 
   const hasRestaurants = restaurants && restaurants.length > 0
@@ -125,10 +135,7 @@ export default async function RestaurantsPage() {
                 </CardContent>
               </Card>
             </div>
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">Restaurants</h2>
-              <AddRestaurantForm />
-            </div>
+            <RestaurantHeader />
             <Suspense fallback={<div>Loading restaurants...</div>}>
               {error ? (
                 <div className="col-span-full text-center py-8 text-red-500">
@@ -146,7 +153,7 @@ export default async function RestaurantsPage() {
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {restaurants.map((restaurant) => (
+                  {restaurantsWithCounts.map((restaurant) => (
                     <RestaurantCard 
                       key={restaurant.id} 
                       restaurant={restaurant}

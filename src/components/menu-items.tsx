@@ -51,6 +51,12 @@ const getValidImageUrl = (url?: string) => {
       return url
     }
     
+    // Validate URL format
+    if (!url.match(/^https?:\/\//)) {
+      console.warn('Invalid URL format:', url)
+      return '/images/placeholder-dish.jpg'
+    }
+    
     // Handle absolute URLs
     const urlObj = new URL(url)
     if (allowedDomains.includes(urlObj.hostname)) {

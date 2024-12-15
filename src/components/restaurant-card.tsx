@@ -5,9 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import type { Database } from "@/types/supabase"
+import type { Database } from "@/lib/database.types"
 
-type Restaurant = Database['public']['Tables']['restaurants']['Row']
+type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"] & {
+  orders?: {
+    count: number
+  }
+  orders_count?: number
+}
 
 interface RestaurantCardProps {
   restaurant: Restaurant
@@ -16,6 +21,18 @@ interface RestaurantCardProps {
 
 export function RestaurantCard({ restaurant, showActions = true }: RestaurantCardProps) {
   const router = useRouter()
+
+  const renderOrdersCount = () => {
+    if (restaurant.orders_count === undefined) return null;
+    
+    return (
+      <span className="text-sm text-muted-foreground">
+        {restaurant.orders_count === 0 
+          ? "No orders yet" 
+          : `${restaurant.orders_count} ${restaurant.orders_count === 1 ? 'order' : 'orders'}`}
+      </span>
+    );
+  };
 
   return (
     <Card 
@@ -29,11 +46,14 @@ export function RestaurantCard({ restaurant, showActions = true }: RestaurantCar
               <Store className="h-5 w-5 text-muted-foreground" />
               <span className="group-hover:underline">{restaurant.name}</span>
             </CardTitle>
-            <Badge>Active</Badge>
-            {restaurant.cashback_percentage > 0 && (
+            <div className="flex items-center gap-2">
+              <Badge>Active</Badge>
+              {renderOrdersCount()}
+            </div>
+            {restaurant.cashback_percentage !== null && restaurant.cashback_percentage > 0 && (
               <div className="flex items-center text-sm text-green-600 dark:text-green-500">
                 <Percent className="h-4 w-4 mr-1" />
-                {restaurant.cashback_percentage.toFixed(2)}% cashback
+                {restaurant.cashback_percentage?.toFixed(2)}% cashback
               </div>
             )}
           </div>
@@ -61,12 +81,14 @@ export function RestaurantCard({ restaurant, showActions = true }: RestaurantCar
             className="flex items-center gap-2"
             onClick={(e) => {
               e.stopPropagation()
-              window.open(restaurant.website, '_blank')
+              if (restaurant.website) {
+                window.open(restaurant.website, '_blank')
+              }
             }}
           >
             <Globe className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm text-blue-500 hover:underline">
-              {new URL(restaurant.website).hostname}
+              {restaurant.website ? new URL(restaurant.website).hostname : ''}
             </span>
           </div>
         )}

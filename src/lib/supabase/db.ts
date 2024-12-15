@@ -14,6 +14,8 @@ const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+type Restaurant = Database['public']['Tables']['restaurants']['Row']
+
 export const db = {
   customers: {
     async getCount() {
@@ -28,7 +30,40 @@ export const db = {
         .select('*', { count: 'exact' })
         .eq('status', 'active')
       return count
-    }
+    },
+    async getByRestaurantId(restaurantId: string) {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          customer:customers!inner(
+            id,
+            name,
+            email,
+            avatar_url
+          ),
+          created_at
+        `)
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching customers:', error);
+        return [];
+      }
+
+      // Transform and deduplicate customers
+      const customersMap = new Map();
+      data.forEach(order => {
+        if (order.customer && !customersMap.has(order.customer.id)) {
+          customersMap.set(order.customer.id, {
+            ...order.customer,
+            orders_count: data.filter(o => o.customer?.id === order.customer.id).length
+          });
+        }
+      });
+
+      return Array.from(customersMap.values());
+    },
   },
   orders: {
     async getPendingCount() {
@@ -61,10 +96,10 @@ export const db = {
       return count
     },
     async getCategoriesCount() {
-      const { data } = (await supabase
+      const { data } = await supabase
         .from('menu_items')
         .select('category')
-        .distinct()) as { data: { category: string }[] }
+        .distinct('category')
       return data?.length || 0
     },
     async getItems(options?: { filter?: { restaurant_id?: string } }) {
