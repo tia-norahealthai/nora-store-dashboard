@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from 'sonner'
+import { SupabaseAuthProvider } from '@/components/providers/supabase-auth-provider'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,7 +32,9 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://use.typekit.net/qoe4nom.css" />
       </head>
       <body className="antialiased">
-        {children}
+        <SupabaseAuthProvider>
+          {children}
+        </SupabaseAuthProvider>
         <SonnerToaster />
       </body>
     </html>

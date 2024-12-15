@@ -1,53 +1,77 @@
-export type Database = {
+export interface Database {
   public: {
     Tables: {
-      restaurants: {
+      customers: {
         Row: {
           id: string
           name: string
-          address: string
-          business_hours: Record<string, { open: string; close: string }>
-          website?: string
-          email?: string
-          // Add other fields as needed
+          email: string
+          phone?: string
+          created_at: string
+          dietary_preferences?: string
+          allergens?: string
+          drinks_budget?: number
+          meals_budget?: number
+          snacks_budget?: number
         }
-        Insert: Omit<Database['public']['Tables']['restaurants']['Row'], 'id'>
-        Update: Partial<Database['public']['Tables']['restaurants']['Insert']>
+      }
+      orders: {
+        Row: {
+          id: string
+          status: string
+          created_at: string
+          total_amount: number
+          customer_id: string
+        }
+      }
+      order_items: {
+        Row: {
+          id: string
+          quantity: number
+          menu_item_id: string
+          order_id: string
+        }
       }
       menu_items: {
         Row: {
           id: string
           name: string
-          description?: string
           price: number
-          category: string
-          image_url?: string
-          dietary?: string[]
-          allergens?: string[]
-          ingredients?: string[]
-          preparation_time?: number
-          created_at: string
-          updated_at: string
-          calories?: number
-          protein?: number
-          carbohydrates?: number
-          fat?: number
-          fiber?: number
-          restaurant_id?: string
-          type?: string
-          cuisine_type?: string
-          average_rating?: number
-          added_sugars?: number
-          processed_food?: boolean
-          dressing?: string
-          food_benefits?: string[]
-          healthy_score?: number
-          availability?: string
+          description?: string
+          category?: string
         }
-        Insert: Omit<Database['public']['Tables']['menu_items']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['menu_items']['Insert']>
       }
-      // Add other tables as needed
+      meal_plans: {
+        Row: {
+          id: string
+          customer_id: string
+          start_date: string
+          end_date: string
+          status: 'draft' | 'completed' | 'partial'
+          created_at: string
+        }
+        Insert: {
+          customer_id: string
+          start_date: string
+          end_date: string
+          status: 'draft' | 'completed' | 'partial'
+        }
+      }
+      meal_plan_items: {
+        Row: {
+          id: string
+          meal_plan_id: string
+          day: string
+          daytime: 'breakfast' | 'lunch' | 'dinner'
+          menu_item_id?: string
+        }
+        Insert: {
+          meal_plan_id: string
+          day: string
+          daytime: 'breakfast' | 'lunch' | 'dinner'
+          menu_item_id?: string
+        }
+      }
     }
   }
 }
