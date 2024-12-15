@@ -168,20 +168,30 @@ export async function getMenuItems() {
 
 export async function getCustomers(): Promise<Customer[]> {
   try {
-    const { data, error } = await supabase
+    // First get all customers with their orders
+    const { data: customers, error } = await supabase
       .from('customers')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .select(`
+        *,
+        orders!customer_id(id)
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching customers:', error)
-      return []
+      console.error('Error fetching customers:', error);
+      return [];
     }
 
-    return data || []
+    // Transform the data to include the order count
+    return (customers || []).map(customer => ({
+      ...customer,
+      // Count the actual orders array length
+      total_orders: Array.isArray(customer.orders) ? customer.orders.length : 0
+    }));
+
   } catch (error) {
-    console.error('Unexpected error fetching customers:', error)
-    return []
+    console.error('Unexpected error fetching customers:', error);
+    return [];
   }
 }
 
@@ -245,15 +255,115 @@ export async function getCustomerById(id: string) {
 } 
 
 export async function getCustomerMetrics() {
-  // Implement the logic to fetch these metrics from your database
-  return {
-    totalCustomers: 2420,
-    newCustomers: 185,
-    averageOrderValue: 249,
-    orderValueTrend: 12.5,
-    retentionRate: 86,
-    retentionTrend: 2.4,
-    monthlyOrders: 1652,
-    ordersTrend: 8.1
+  try {
+    // Get current date and first day of current month
+    const now = new Date()
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    
+    // Get total customers and new customers this month
+    const { data: customersData, error: customersError } = await supabase
+      .from('customers')
+      .select('id, created_at')
+
+    if (customersError) {
+      console.error('Error fetching customers data:', customersError)
+      throw customersError
+    }
+
+    const totalCustomers = customersData?.length || 0
+    const newCustomers = customersData?.filter(c => 
+      new Date(c.created_at) >= firstDayOfMonth
+    ).length || 0
+
+    // Get orders data for this month and last month with their items
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        created_at,
+        customer_id,
+        order_items!order_id (
+          quantity,
+          menu_items!menu_item_id (
+            price
+          )
+        )
+      `)
+      .gte('created_at', firstDayOfLastMonth.toISOString())
+
+    if (ordersError) {
+      console.error('Error fetching orders data:', ordersError)
+      throw ordersError
+    }
+
+    // Calculate orders metrics
+    const thisMonthOrders = ordersData?.filter(o => new Date(o.created_at) >= firstDayOfMonth) || []
+    const lastMonthOrders = ordersData?.filter(o => 
+      new Date(o.created_at) >= firstDayOfLastMonth && 
+      new Date(o.created_at) < firstDayOfMonth
+    ) || []
+
+    const monthlyOrders = thisMonthOrders.length
+    const ordersTrend = lastMonthOrders.length 
+      ? ((monthlyOrders - lastMonthOrders.length) / lastMonthOrders.length * 100).toFixed(1)
+      : 0
+
+    // Calculate total amount for each order
+    const getOrderTotal = (order: any) => {
+      if (!order.order_items || !Array.isArray(order.order_items)) return 0
+      return order.order_items.reduce((sum: number, item: any) => {
+        const quantity = item.quantity || 0
+        const price = item.menu_items?.price || 0
+        return sum + (quantity * price)
+      }, 0)
+    }
+
+    // Calculate average order value
+    const thisMonthTotal = thisMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0)
+    const lastMonthTotal = lastMonthOrders.reduce((sum, order) => sum + getOrderTotal(order), 0)
+    
+    const averageOrderValue = thisMonthOrders.length 
+      ? Math.round(thisMonthTotal / thisMonthOrders.length) 
+      : 0
+    const lastMonthAverage = lastMonthOrders.length 
+      ? lastMonthTotal / lastMonthOrders.length 
+      : 0
+    const orderValueTrend = lastMonthAverage 
+      ? ((averageOrderValue - lastMonthAverage) / lastMonthAverage * 100).toFixed(1)
+      : 0
+
+    // Calculate retention rate
+    const thisMonthCustomers = new Set(thisMonthOrders.map(o => o.customer_id))
+    const lastMonthCustomers = new Set(lastMonthOrders.map(o => o.customer_id))
+    const repeatCustomers = Array.from(thisMonthCustomers).filter(id => lastMonthCustomers.has(id))
+    
+    const retentionRate = lastMonthCustomers.size 
+      ? Math.round((repeatCustomers.length / lastMonthCustomers.size) * 100)
+      : 0
+
+    return {
+      totalCustomers,
+      newCustomers,
+      averageOrderValue,
+      orderValueTrend: Number(orderValueTrend),
+      retentionRate,
+      retentionTrend: 0,
+      monthlyOrders,
+      ordersTrend: Number(ordersTrend)
+    }
+  } catch (error) {
+    console.error('Error fetching customer metrics:', error)
+    // Return default values in case of error
+    return {
+      totalCustomers: 0,
+      newCustomers: 0,
+      averageOrderValue: 0,
+      orderValueTrend: 0,
+      retentionRate: 0,
+      retentionTrend: 0,
+      monthlyOrders: 0,
+      ordersTrend: 0
+    }
   }
 }

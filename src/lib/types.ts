@@ -8,4 +8,5 @@ export interface Customer {
   meals_budget?: number
   drinks_budget?: number
   food_preferences?: string[]
+  total_orders: number
 } 

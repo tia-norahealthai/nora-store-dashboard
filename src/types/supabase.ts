@@ -50,4 +50,6 @@ export type Database = {
       // Add other tables as needed
     }
   }
-} 
+}
+
+export type MenuItem = Database['public']['Tables']['menu_items']['Row'] 

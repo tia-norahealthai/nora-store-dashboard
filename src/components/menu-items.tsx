@@ -28,6 +28,7 @@ import { AddMenuItemForm } from './add-menu-item-form'
 import { CsvUpload } from './csv-upload'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
+import Link from 'next/link'
 
 interface MenuItemsProps {
   initialItems: MenuItem[]
@@ -144,48 +145,43 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className="group relative rounded-lg border hover:border-foreground/50 cursor-pointer"
+          <Link 
+            key={item.id} 
+            href={`/menu/${item.id}`}
+            className="block transition-colors hover:bg-muted/50 rounded-lg"
           >
-            <Card className="overflow-hidden">
-              <CardHeader className="border-b p-0">
-                <div className="aspect-video relative bg-muted">
-                  <div className="relative w-full h-48">
-                    <Image
-                      src={getValidImageUrl(item.image_url)}
-                      alt={item.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover"
-                      priority={false}
-                    />
-                  </div>
+            <div className="p-6 rounded-lg border">
+              <div className="relative w-full aspect-[4/3] mb-4 rounded-md overflow-hidden">
+                <Image
+                  src={getValidImageUrl(item.image_url)}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </div>
+              {item.restaurant_id && restaurants[item.restaurant_id] && (
+                <div className="flex items-center gap-1 mb-2 text-sm text-muted-foreground">
+                  <Store className="h-4 w-4" />
+                  {restaurants[item.restaurant_id]}
                 </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold">{item.name}</h3>
-                    <div 
-                      className="flex items-center text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/restaurants/${item.restaurant_id}`)
-                      }}
-                    >
-                      <Store className="h-3 w-3 mr-1" />
-                      {restaurants[item.restaurant_id] || 'Loading...'}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {item.description}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">${item.price.toFixed(2)}</Badge>
+              )}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">{item.name}</h3>
+                <div className="text-lg font-semibold">
+                  ${item.price.toFixed(2)}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {item.description}
+              </p>
+              {item.category && (
+                <Badge variant="secondary" className="mt-2">
+                  {item.category}
+                </Badge>
+              )}
+            </div>
+          </Link>
         ))}
       </div>
     </div>

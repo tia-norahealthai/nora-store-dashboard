@@ -75,6 +75,7 @@ export interface Database {
           } | null
           created_at: string
           updated_at: string
+          cashback_percentage: number | null
         }
         Insert: {
           id?: string
@@ -92,6 +93,7 @@ export interface Database {
           } | null
           created_at?: string
           updated_at?: string
+          cashback_percentage?: number | null
         }
         Update: {
           id?: string
@@ -109,6 +111,7 @@ export interface Database {
           } | null
           created_at?: string
           updated_at?: string
+          cashback_percentage?: number | null
         }
       }
     }

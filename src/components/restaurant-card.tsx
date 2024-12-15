@@ -1,6 +1,6 @@
 "use client"
 
-import { Store, MapPin, Phone, Mail, Globe } from "lucide-react"
+import { Store, MapPin, Phone, Mail, Globe, Percent } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
@@ -30,6 +30,12 @@ export function RestaurantCard({ restaurant, showActions = true }: RestaurantCar
               <span className="group-hover:underline">{restaurant.name}</span>
             </CardTitle>
             <Badge>Active</Badge>
+            {restaurant.cashback_percentage > 0 && (
+              <div className="flex items-center text-sm text-green-600 dark:text-green-500">
+                <Percent className="h-4 w-4 mr-1" />
+                {restaurant.cashback_percentage.toFixed(2)}% cashback
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>

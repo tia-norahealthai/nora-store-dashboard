@@ -66,6 +66,7 @@ export function RestaurantsTable() {
             <TableHead>Location</TableHead>
             <TableHead>Contact</TableHead>
             <TableHead>Hours</TableHead>
+            <TableHead>Cashback</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -89,6 +90,11 @@ export function RestaurantsTable() {
               </TableCell>
               <TableCell>
                 {restaurant.business_hours?.monday?.open} - {restaurant.business_hours?.monday?.close}
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary">
+                  {restaurant.cashback_percentage?.toFixed(2)}%
+                </Badge>
               </TableCell>
               <TableCell>
                 <Badge>Active</Badge>
