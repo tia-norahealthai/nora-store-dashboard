@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,6 @@ export function MariaChat() {
   }])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const pathname = usePathname()
   const { toast } = useToast()
 
   const sendMessage = async (content: string) => {
@@ -93,8 +92,8 @@ export function MariaChat() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="flex flex-col space-y-4">
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col space-y-4 p-4">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -125,22 +124,24 @@ export function MariaChat() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 flex gap-3 border-t">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoading}
-          className="flex-1"
-        />
-        <Button 
-          type="submit" 
-          disabled={isLoading || !input.trim()}
-          className="shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      <div className="border-t bg-background p-4">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={isLoading || !input.trim()}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
     </div>
   )
 } 

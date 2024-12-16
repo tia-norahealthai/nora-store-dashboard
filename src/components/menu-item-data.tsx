@@ -12,7 +12,40 @@ interface MenuItemDataProps {
 
 const getValidImageUrl = (url?: string) => {
   if (!url) return '/images/placeholder-dish.jpg'
-  return url.startsWith('/') ? url : url || '/images/placeholder-dish.jpg'
+  
+  // If it's a relative URL starting with /, return as is
+  if (url.startsWith('/')) {
+    return url
+  }
+
+  // If it's a data URL, return as is
+  if (url.startsWith('data:')) {
+    return url
+  }
+
+  // List of allowed domains
+  const allowedDomains = [
+    'xyhqystoebgvqjqgmqng.supabase.co',
+    'images.unsplash.com',
+    'images.squarespace-cdn.com',
+    'xtra-static-content.s3.us-east-1.amazonaws.com'
+  ]
+
+  try {
+    // Add https:// if the URL doesn't start with http:// or https://
+    const urlToCheck = url.match(/^https?:\/\//) ? url : `https://${url}`
+    const urlObj = new URL(urlToCheck)
+    
+    if (allowedDomains.includes(urlObj.hostname)) {
+      return urlToCheck
+    }
+    
+    console.warn(`Image domain not allowed: ${urlObj.hostname}`)
+    return '/images/placeholder-dish.jpg'
+  } catch (error) {
+    console.warn('Invalid image URL:', url)
+    return '/images/placeholder-dish.jpg'
+  }
 }
 
 export function MenuItemData({ menuItem }: MenuItemDataProps) {
