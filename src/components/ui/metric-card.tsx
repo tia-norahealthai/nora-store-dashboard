@@ -4,12 +4,12 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-const metricCardVariants = cva("rounded-xl border bg-card p-6 text-card-foreground", {
+const metricValueVariants = cva("text-2xl font-bold", {
   variants: {
     trend: {
       up: "text-green-500",
       down: "text-red-500",
-      neutral: "text-muted-foreground",
+      neutral: "text-foreground",
     },
   },
   defaultVariants: {
@@ -19,7 +19,7 @@ const metricCardVariants = cva("rounded-xl border bg-card p-6 text-card-foregrou
 
 interface MetricCardProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof metricCardVariants> {
+    VariantProps<typeof metricValueVariants> {
   title: string
   value: string | number
   description?: string
@@ -46,7 +46,7 @@ export function MetricCard({
   ...props
 }: MetricCardProps) {
   return (
-    <Card className={cn(metricCardVariants({ trend }), className)} {...props}>
+    <Card className={cn("rounded-xl border bg-card text-card-foreground", className)} {...props}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
@@ -61,35 +61,39 @@ export function MetricCard({
           </div>
         ) : (
           <>
-            <div className="text-2xl font-bold">{value}</div>
+            <div className="flex items-baseline space-x-2">
+              <div className={metricValueVariants({ trend })}>{value}</div>
+              {trend !== "neutral" && trendValue && (
+                <span className={cn(
+                  "inline-flex items-center text-sm font-medium",
+                  trend === "up" ? "text-green-500" : "text-red-500"
+                )}>
+                  {trend === "up" ? (
+                    <ArrowUpIcon className="mr-1 h-4 w-4" />
+                  ) : (
+                    <ArrowDownIcon className="mr-1 h-4 w-4" />
+                  )}
+                  {trendValue}
+                </span>
+              )}
+            </div>
             {description && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {description}
-              </p>
+              <p className="text-xs text-muted-foreground">{description}</p>
+            )}
+            {details && (
+              <div className="mt-4 space-y-2">
+                {details.map((detail, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="text-muted-foreground">{detail.label}</span>
+                    <span>{detail.value}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </>
-        )}
-        
-        {trendValue && (
-          <div className="mt-4 flex items-center gap-1 text-sm">
-            {trend === "up" && <ArrowUpIcon className="h-4 w-4" />}
-            {trend === "down" && <ArrowDownIcon className="h-4 w-4" />}
-            <span className="font-medium">{trendValue}</span>
-          </div>
-        )}
-
-        {details && details.length > 0 && (
-          <div className="space-y-1 mt-2">
-            {details.map((detail, index) => (
-              <p 
-                key={index} 
-                className="text-xs text-muted-foreground flex justify-between"
-              >
-                <span>{detail.label}:</span>
-                <span>{detail.value}</span>
-              </p>
-            ))}
-          </div>
         )}
       </CardContent>
     </Card>

@@ -15,6 +15,9 @@ import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
 import { formatCurrency } from "@/lib/utils"
 import { OrderCard } from "@/components/order-card"
+import { MetricCard } from "@/components/ui/metric-card"
+import { ShoppingBag, DollarSign, CreditCard, Users } from "lucide-react"
+import type { OrderItem } from "@/types/order"
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row']
@@ -59,7 +62,7 @@ export default async function OrdersPage() {
       ...order,
       customer: order.customer,
       restaurant: order.restaurant,
-      order_items: order.order_items.map(item => ({
+      order_items: order.order_items.map((item: OrderItem) => ({
         ...item,
         menu_item: item.menu_item
       }))
@@ -98,31 +101,41 @@ export default async function OrdersPage() {
           </header>
           <main className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                  <div className="text-sm font-medium text-muted-foreground">Total Orders</div>
-                  <div className="text-2xl font-bold">{totalOrders}</div>
-                </div>
-                <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                  <div className="text-sm font-medium text-muted-foreground">Total Revenue</div>
-                  <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-                </div>
-                <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                  <div className="text-sm font-medium text-muted-foreground">Average Order Value</div>
-                  <div className="text-2xl font-bold">{formatCurrency(averageOrderValue)}</div>
-                </div>
-                <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                  <div className="text-sm font-medium text-muted-foreground">Unique Customers</div>
-                  <div className="text-2xl font-bold">{uniqueCustomers}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {transformedOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
+              <div className="flex flex-col gap-4 p-4 pt-0">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <MetricCard
+                    title="Total Orders"
+                    value={totalOrders}
+                    description="All time orders"
+                    icon={ShoppingBag}
                   />
-                ))}
+                  <MetricCard
+                    title="Total Revenue"
+                    value={formatCurrency(totalRevenue)}
+                    description="All time revenue"
+                    icon={DollarSign}
+                  />
+                  <MetricCard
+                    title="Average Order Value"
+                    value={formatCurrency(averageOrderValue)}
+                    description="Per order"
+                    icon={CreditCard}
+                  />
+                  <MetricCard
+                    title="Unique Customers"
+                    value={uniqueCustomers}
+                    description="Total customers"
+                    icon={Users}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {transformedOrders.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </main>

@@ -58,7 +58,7 @@ export default function Page() {
                 description="Monthly revenue"
                 icon={DollarSign}
                 trend="up"
-                trendValue="+20.1% from last month"
+                trendValue="+20.1%"
               />
               <MetricCard
                 title="Active Users"
@@ -66,7 +66,7 @@ export default function Page() {
                 description="Active users this month"
                 icon={Users}
                 trend="down"
-                trendValue="-4% from last month"
+                trendValue="-4%"
               />
               <MetricCard
                 title="Conversion Rate"
@@ -74,7 +74,7 @@ export default function Page() {
                 description="Average conversion rate"
                 icon={BarChart3}
                 trend="up"
-                trendValue="+2.4% from last month"
+                trendValue="+2.4%"
               />
             </div>
             <div className="grid gap-4 lg:grid-cols-2">

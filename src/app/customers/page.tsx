@@ -12,13 +12,15 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { CustomersTable } from "@/components/customers-table"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { getCustomers, getCustomerMetrics } from "@/lib/data-collector"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MetricCard } from "@/components/ui/metric-card"
 import { Users, DollarSign, TrendingUp, ShoppingBag } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
+import type { Customer } from "@/types/customer"
 
 export const dynamic = 'force-dynamic'
 
 export default async function CustomersPage() {
-  const customers = await getCustomers()
+  const customers = await getCustomers() as Customer[]
   const metrics = await getCustomerMetrics()
   
   return (
@@ -45,54 +47,36 @@ export default async function CustomersPage() {
         <div className="flex-1 overflow-auto">
           <div className="flex flex-col gap-4 p-4 pt-0">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics.totalCustomers}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +{metrics.newCustomers} this month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${metrics.averageOrderValue}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {metrics.orderValueTrend}% vs last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Customer Retention</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics.retentionRate}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    {metrics.retentionTrend}% vs last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Orders This Month</CardTitle>
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metrics.monthlyOrders}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {metrics.ordersTrend}% vs last month
-                  </p>
-                </CardContent>
-              </Card>
+              <MetricCard
+                title="Total Customers"
+                value={metrics.totalCustomers.toString()}
+                description={`+${metrics.newCustomers} this month`}
+                icon={Users}
+              />
+              <MetricCard
+                title="Average Order Value"
+                value={formatCurrency(metrics.averageOrderValue)}
+                description="vs last month"
+                icon={DollarSign}
+                trend={metrics.orderValueTrend > 0 ? "up" : "down"}
+                trendValue={`${metrics.orderValueTrend}%`}
+              />
+              <MetricCard
+                title="Customer Retention"
+                value={`${metrics.retentionRate}%`}
+                description="vs last month"
+                icon={TrendingUp}
+                trend={metrics.retentionTrend > 0 ? "up" : "down"}
+                trendValue={`${metrics.retentionTrend}%`}
+              />
+              <MetricCard
+                title="Orders This Month"
+                value={metrics.monthlyOrders.toString()}
+                description="vs last month"
+                icon={ShoppingBag}
+                trend={metrics.ordersTrend > 0 ? "up" : "down"}
+                trendValue={`${metrics.ordersTrend}%`}
+              />
             </div>
             <CustomersTable initialData={customers} />
           </div>
