@@ -26,29 +26,44 @@ import { RestaurantHeader } from "@/components/restaurant-header"
 
 export const dynamic = 'force-dynamic'
 
+// Add type for the metrics data
+type MetricsData = {
+  total_locations: number
+  avg_hours: number
+  cities: number
+  digital_platforms: number
+}
+
 export default async function RestaurantsPage() {
   const cookieStore = await cookies()
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   })
   
-  // Fetch restaurants data with orders count
+  // Update the query to get the actual count of orders
   const { data: restaurants, error } = await supabase
     .from('restaurants')
     .select(`
-      *,
-      orders:orders (count)
+      id,
+      name,
+      address,
+      phone,
+      email,
+      website,
+      cashback_percentage,
+      orders:orders(count)
     `)
     .order('name')
 
-  // Transform the data to include orders_count
+  // Transform the data to include orders_count correctly
   const restaurantsWithCounts = restaurants?.map(restaurant => ({
     ...restaurant,
-    orders_count: restaurant.orders?.count ?? 0
+    // Access the count from the first element of the orders array
+    orders_count: (restaurant.orders?.[0]?.count ?? 0)
   })) ?? []
 
-  // Fetch metrics
-  const { data: metricsData } = await supabase.rpc('get_restaurant_metrics')
+  // Fix the metrics data typing
+  const { data: metricsData } = await supabase.rpc('get_restaurant_metrics') as { data: MetricsData[] }
   const metrics = {
     totalLocations: metricsData?.[0]?.total_locations ?? 0,
     avgHours: metricsData?.[0]?.avg_hours ?? 0,

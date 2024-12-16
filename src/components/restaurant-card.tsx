@@ -8,10 +8,7 @@ import { useRouter } from "next/navigation"
 import type { Database } from "@/lib/database.types"
 
 type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"] & {
-  orders?: {
-    count: number
-  }
-  orders_count?: number
+  orders_count: number
 }
 
 interface RestaurantCardProps {
@@ -23,13 +20,13 @@ export function RestaurantCard({ restaurant, showActions = true }: RestaurantCar
   const router = useRouter()
 
   const renderOrdersCount = () => {
-    if (restaurant.orders_count === undefined) return null;
+    const ordersCount = restaurant.orders_count
     
     return (
       <span className="text-sm text-muted-foreground">
-        {restaurant.orders_count === 0 
+        {ordersCount === 0 
           ? "No orders yet" 
-          : `${restaurant.orders_count} ${restaurant.orders_count === 1 ? 'order' : 'orders'}`}
+          : `${ordersCount} ${ordersCount === 1 ? 'order' : 'orders'}`}
       </span>
     );
   };

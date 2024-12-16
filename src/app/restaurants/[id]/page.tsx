@@ -38,7 +38,7 @@ import { Restaurant, RestaurantMetrics } from "@/types/restaurant"
 export default async function RestaurantPage({ params }: { params: { id: string } }) {
   const id = params.id
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore,
   })
