@@ -167,7 +167,7 @@ export function AppSidebar({ collapsed, ...props }: AppSidebarProps) {
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -29,17 +29,31 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/components/providers/supabase-auth-provider"
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar()
+  const { user, signOut } = useAuth()
+
+  // Get user initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      ?.split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase() || 'U'
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  if (!user) return null
 
   return (
     <SidebarMenu>
@@ -51,11 +65,15 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={"/avo-logo.webp"} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                <AvatarFallback className="rounded-lg">
+                  {getInitials(user.user_metadata?.full_name || user.email)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-base leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
+                <span className="truncate font-semibold">
+                  {user.user_metadata?.full_name || user.email}
+                </span>
                 <span className="truncate text-sm">{user.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -70,11 +88,15 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-base">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={"/avo-logo.webp"} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(user.user_metadata?.full_name || user.email)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-base leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
+                  <span className="truncate font-semibold">
+                    {user.user_metadata?.full_name || user.email}
+                  </span>
                   <span className="truncate text-sm">{user.email}</span>
                 </div>
               </div>
@@ -82,28 +104,28 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
+                <Sparkles className="mr-2 h-4 w-4" />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheck />
+                <BadgeCheck className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <CreditCard />
+                <CreditCard className="mr-2 h-4 w-4" />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Bell />
+                <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
