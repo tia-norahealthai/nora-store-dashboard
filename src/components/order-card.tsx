@@ -40,7 +40,10 @@ export function OrderCard({ order }: OrderCardProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-card p-6 shadow-sm">
+    <div 
+      className="rounded-lg border bg-card p-6 shadow-sm cursor-pointer hover:border-foreground/50 transition-all"
+      onClick={() => handleViewDetails(order.id)}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
@@ -54,12 +57,12 @@ export function OrderCard({ order }: OrderCardProps) {
           </div>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => handleViewDetails(order.id)}>
               View details
