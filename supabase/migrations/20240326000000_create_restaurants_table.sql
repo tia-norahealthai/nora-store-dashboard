@@ -3,24 +3,20 @@ CREATE TABLE IF NOT EXISTS restaurants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   address TEXT NOT NULL,
-  logo_url TEXT,
   phone TEXT,
   email TEXT,
   website TEXT,
-  business_hours JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  logo_url TEXT,
+  cities TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Add restaurant_id to menu_items table
-ALTER TABLE menu_items 
-ADD COLUMN restaurant_id UUID REFERENCES restaurants(id);
+-- Add RLS policies
+ALTER TABLE restaurants ENABLE ROW LEVEL SECURITY;
 
--- Create index for better query performance
-CREATE INDEX idx_menu_items_restaurant_id ON menu_items(restaurant_id);
-
--- Create trigger to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Create trigger function if it doesn't exist
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -28,11 +24,18 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create trigger for restaurants table
-CREATE TRIGGER update_restaurants_updated_at
+-- Add trigger for updated_at
+CREATE TRIGGER set_timestamp
     BEFORE UPDATE ON restaurants
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION trigger_set_timestamp();
+
+-- Add restaurant_id to menu_items table
+ALTER TABLE menu_items 
+ADD COLUMN restaurant_id UUID REFERENCES restaurants(id);
+
+-- Create index for better query performance
+CREATE INDEX idx_menu_items_restaurant_id ON menu_items(restaurant_id);
 
 -- Insert sample restaurant data
 INSERT INTO restaurants (

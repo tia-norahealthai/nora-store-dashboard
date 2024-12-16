@@ -72,6 +72,32 @@ export interface Database {
           menu_item_id?: string
         }
       }
+      restaurant_users: {
+        Row: {
+          id: string
+          restaurant_id: string
+          user_id: string
+          role: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          restaurant_id: string
+          user_id: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          restaurant_id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
