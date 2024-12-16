@@ -64,11 +64,6 @@ const data = {
       title: "Business",
       items: [
         {
-          title: "Opportunities",
-          url: "/opportunities",
-          icon: PieChart,
-        },
-        {
           title: "Orders",
           url: "/orders",
           icon: Store,
@@ -79,15 +74,20 @@ const data = {
           icon: MessageSquare,
         },
         {
-          title: "Invoices",
-          url: "/invoices",
-          icon: Frame,
-        },
-        {
           title: "Restaurants",
           url: "/restaurants",
           icon: Store,
         },
+        {
+          title: "Opportunities",
+          url: "/opportunities",
+          icon: PieChart,
+        },
+        {
+          title: "Invoices",
+          url: "/invoices",
+          icon: Frame,
+        }
       ]
     },
     {
@@ -159,12 +159,10 @@ export function AppSidebar({ collapsed, ...props }: AppSidebarProps) {
               collapsed && "w-6 h-6"
             )}
           />
-          {/* <TeamSwitcher teams={data.teams} /> */}
         </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

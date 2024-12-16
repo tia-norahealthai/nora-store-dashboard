@@ -29,13 +29,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/components/providers/supabase-auth-provider"
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { user, signOut } = useAuth()
+  
+  // Sample user data
+  const user = {
+    email: "admin@avo.com",
+    user_metadata: {
+      full_name: "Avo Admin",
+      avatar_url: "/avatars/shadcn.jpg"
+    }
+  }
 
-  // Get user initials for avatar fallback
   const getInitials = (name: string) => {
     return name
       ?.split(' ')
@@ -43,17 +49,6 @@ export function NavUser() {
       .join('')
       .toUpperCase() || 'U'
   }
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
-  }
-
-  if (!user) return null
 
   return (
     <SidebarMenu>
@@ -124,7 +119,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem>
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
