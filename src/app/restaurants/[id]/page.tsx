@@ -34,7 +34,6 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { OrdersMetricCard, RevenueMetricCard } from "@/components/metrics/dynamic-metric-cards"
 import { RestaurantMetricsCards } from "@/components/metrics/restaurant-metrics"
 import { Restaurant, RestaurantMetrics } from "@/types/restaurant"
-import { ITEMS_PER_PAGE } from "@/lib/constants"
 
 export default async function RestaurantPage({ params }: { params: { id: string } }) {
   const id = params.id
@@ -101,12 +100,11 @@ export default async function RestaurantPage({ params }: { params: { id: string 
     cashbackPercentage: restaurantData.cashback_percentage ?? 0
   }
 
-  const { data: menuItems, error: menuError, count } = await supabase
+  const { data: menuItems, error: menuError } = await supabase
     .from('menu_items')
-    .select('*', { count: 'exact' })
+    .select('*')
     .eq('restaurant_id', id)
     .order('name')
-    .range(0, ITEMS_PER_PAGE - 1)
 
   if (menuError) {
     console.error('Error fetching menu items:', menuError)
@@ -301,11 +299,7 @@ export default async function RestaurantPage({ params }: { params: { id: string 
                   <h2 className="text-xl font-semibold">Menu Items</h2>
                   <AddMenuItemForm restaurantId={restaurantData.id} />
                 </div>
-                <MenuItems 
-                  initialItems={menuItems || []} 
-                  restaurantId={restaurantData.id}
-                  totalItems={count || 0}
-                />
+                <MenuItems initialItems={menuItems || []} />
               </div>
             </div>
 

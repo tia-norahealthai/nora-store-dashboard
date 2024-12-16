@@ -29,12 +29,9 @@ import { CsvUpload } from './csv-upload'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
 import Link from 'next/link'
-import { ITEMS_PER_PAGE } from "@/lib/constants"
 
 interface MenuItemsProps {
   initialItems: MenuItem[]
-  restaurantId: string
-  totalItems: number
 }
 
 // Update the getValidImageUrl function
@@ -74,22 +71,18 @@ const getValidImageUrl = (url?: string) => {
   }
 }
 
-export function MenuItems({ initialItems, restaurantId, totalItems }: MenuItemsProps) {
-  const [items, setItems] = useState(initialItems)
+export function MenuItems({ initialItems }: MenuItemsProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialItems)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [restaurants, setRestaurants] = useState<Record<string, string>>({})
-  const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
-  
   const supabase = createClientComponentClient<Database>()
   const router = useRouter()
 
   // Fetch restaurant names for all menu items
   useEffect(() => {
     async function fetchRestaurants() {
-      const restaurantIds = Array.from(new Set(items.map(item => item.restaurant_id)))
+      const restaurantIds = Array.from(new Set(menuItems.map(item => item.restaurant_id)))
       
       if (restaurantIds.length === 0) return
 
@@ -110,37 +103,16 @@ export function MenuItems({ initialItems, restaurantId, totalItems }: MenuItemsP
     }
 
     fetchRestaurants()
-  }, [items, supabase])
+  }, [menuItems, supabase])
 
-  const categories = Array.from(new Set(items.map(item => item.category))).filter(Boolean)
+  const categories = Array.from(new Set(menuItems.map(item => item.category))).filter(Boolean)
 
-  const filteredItems = items.filter(item => {
+  const filteredItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !selectedCategory || item.category === selectedCategory
     return matchesSearch && matchesCategory
   })
-
-  const fetchPage = async (page: number) => {
-    setLoading(true)
-    const start = (page - 1) * ITEMS_PER_PAGE
-    const end = start + ITEMS_PER_PAGE - 1
-
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
-      .eq('restaurant_id', restaurantId)
-      .order('name')
-      .range(start, end)
-
-    if (error) {
-      console.error('Error fetching menu items:', error)
-    } else {
-      setItems(data || [])
-      setCurrentPage(page)
-    }
-    setLoading(false)
-  }
 
   return (
     <div className="space-y-4">
@@ -217,26 +189,6 @@ export function MenuItems({ initialItems, restaurantId, totalItems }: MenuItemsP
             </div>
           </Link>
         ))}
-      </div>
-
-      <div className="flex items-center justify-between mt-4">
-        <Button
-          variant="outline"
-          onClick={() => fetchPage(currentPage - 1)}
-          disabled={currentPage === 1 || loading}
-        >
-          Previous
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() => fetchPage(currentPage + 1)}
-          disabled={currentPage === totalPages || loading}
-        >
-          Next
-        </Button>
       </div>
     </div>
   )

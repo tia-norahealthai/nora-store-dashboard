@@ -31,7 +31,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/qoe4nom.css" />
       </head>
-      <body className="antialiased">
+      <body className={`antialiased ${geistSans.variable} ${geistMono.variable}`}>
         <SupabaseAuthProvider>
           {children}
         </SupabaseAuthProvider>
