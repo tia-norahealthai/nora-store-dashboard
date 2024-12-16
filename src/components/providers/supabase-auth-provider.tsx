@@ -29,6 +29,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       data: { subscription }
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
+      if (event === 'SIGNED_IN') {
+        router.push('/') // Redirect to dashboard after login
+      }
       router.refresh()
     })
 

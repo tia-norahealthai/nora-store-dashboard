@@ -56,6 +56,19 @@ export default function LoginPage() {
     }
   }
 
+  const handleSignUp = async () => {
+    const { data, error } = await supabase.auth.signUp({
+      email: 'your-email@example.com',
+      password: 'your-password'
+    })
+    
+    if (error) {
+      console.error('Error signing up:', error.message)
+    } else {
+      console.log('Signup successful:', data)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
