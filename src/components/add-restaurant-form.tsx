@@ -37,6 +37,13 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   website: z.string().url("Invalid website URL").optional().or(z.literal("")),
+  logo_url: z.string().url("Invalid logo URL").optional().or(z.literal("")),
+  cashback_percentage: z
+    .number()
+    .min(20, "Cashback must be at least 20%")
+    .max(50, "Cashback cannot exceed 50%")
+    .optional()
+    .default(20),
   business_hours: z.object({
     monday: businessHoursSchema,
     tuesday: businessHoursSchema,
@@ -67,6 +74,8 @@ export function AddRestaurantForm({ onSuccess }: { onSuccess: () => void }) {
       phone: "",
       email: "",
       website: "",
+      logo_url: "",
+      cashback_percentage: 20,
       business_hours: {
         monday: defaultBusinessHours,
         tuesday: defaultBusinessHours,
@@ -175,6 +184,40 @@ export function AddRestaurantForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormLabel>Website</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter website URL" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="logo_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logo URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter logo URL" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cashback_percentage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cashback Percentage (20-50%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      min="20"
+                      max="50"
+                      placeholder="Enter cashback percentage (20-50)"
+                      {...field}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
