@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Lock, Mail } from 'lucide-react'
+import { Lock, Mail, Loader2 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import {
   Dialog,
@@ -23,12 +23,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
-  const { signIn, resetPassword } = useAuth()
+  const { signIn, resetPassword, isLoading: authIsLoading } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
+    
     setIsLoading(true)
-
     try {
       await signIn(email, password)
       toast.success('Logged in successfully')
@@ -173,7 +174,14 @@ export default function LoginPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
               </Button>
             </form>
           </CardContent>
