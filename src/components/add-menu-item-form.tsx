@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,15 +14,40 @@ import {
 import { Label } from "@/components/ui/label";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface AddMenuItemFormProps {
-  restaurantId: string
+  restaurantId: string | null
 }
 
 export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<string>(restaurantId || '');
   const supabase = createClientComponentClient<Database>();
+
+  // Fetch restaurants when component mounts
+  useEffect(() => {
+    async function fetchRestaurants() {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching restaurants:', error);
+        return;
+      }
+
+      setRestaurants(data || []);
+      if (!restaurantId && data?.[0]) {
+        setSelectedRestaurant(data[0].id);
+      }
+    }
+
+    fetchRestaurants();
+  }, [restaurantId, supabase]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +63,7 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
       status: 'active',
       ingredients: (formData.get('ingredients') as string).split(',').map(i => i.trim()),
       preparation_time: parseInt(formData.get('preparation_time') as string),
-      restaurant_id: restaurantId
+      restaurant_id: selectedRestaurant
     };
 
     try {
@@ -69,6 +94,27 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
           <DialogTitle>Add New Menu Item</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
+          {!restaurantId && (
+            <div className="grid gap-2">
+              <Label htmlFor="restaurant">Restaurant</Label>
+              <Select
+                value={selectedRestaurant}
+                onValueChange={setSelectedRestaurant}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a restaurant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {restaurants.map((restaurant) => (
+                    <SelectItem key={restaurant.id} value={restaurant.id}>
+                      {restaurant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" required />

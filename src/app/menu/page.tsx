@@ -20,6 +20,8 @@ import { db } from "@/lib/supabase/db"
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
+import { RestaurantHeader } from "@/components/restaurant-header"
+import { AddMenuItemForm } from "@/components/add-menu-item-form"
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +70,11 @@ export default async function MenuPage() {
           </header>
           <div className="flex-1 overflow-auto">
             <div className="flex flex-col gap-4 p-4 pt-0 w-full">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold tracking-tight">Menu Items</h2>
+                <AddMenuItemForm restaurantId={null} />
+              </div>
+              
               <Suspense fallback={<div>Loading menu items...</div>}>
                 <MenuItems initialItems={menuItems} />
               </Suspense>
