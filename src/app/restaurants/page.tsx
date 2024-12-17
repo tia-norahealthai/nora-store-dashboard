@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { RestaurantCard } from "@/components/restaurant-card"
-import { Card, CardContent } from "@/components/ui/card"
-import { Store } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Store, ShoppingBag } from "lucide-react"
 import { RestaurantHeader } from "@/components/restaurant-header"
 import { redirect } from "next/navigation"
 
@@ -38,7 +38,7 @@ export default async function RestaurantsPage() {
       redirect('/login')
     }
 
-    // Simply fetch all restaurants
+    // Fetch restaurants with orders metrics only
     const { data: restaurantsData, error: restaurantsError } = await supabase
       .from('restaurants')
       .select(`
@@ -56,6 +56,11 @@ export default async function RestaurantsPage() {
       ...restaurant,
       orders_count: restaurant.orders?.[0]?.count ?? 0
     }))
+
+    // Calculate metrics
+    const totalRestaurants = transformedRestaurantsData.length
+    const totalOrders = transformedRestaurantsData.reduce((sum, restaurant) => 
+      sum + (restaurant.orders_count || 0), 0)
 
     const hasRestaurants = transformedRestaurantsData.length > 0
 
@@ -83,6 +88,33 @@ export default async function RestaurantsPage() {
           <div className="flex-1 overflow-auto">
             <div className="flex flex-col gap-4 p-4 pt-0">
               <RestaurantHeader />
+              
+              {/* Metrics Cards */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total Restaurants
+                    </CardTitle>
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalRestaurants}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      Total Orders
+                    </CardTitle>
+                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{totalOrders}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
               <Suspense fallback={<div>Loading restaurants...</div>}>
                 {!hasRestaurants ? (
                   <Card className="col-span-full">
