@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function SettingsPage() {
   return (
@@ -54,15 +55,7 @@ export default function SettingsPage() {
                 <CardTitle>Appearance</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Dark Mode</Label>
-                    <div className="text-sm text-muted-foreground">
-                      Switch between light and dark mode
-                    </div>
-                  </div>
-                  <Switch />
-                </div>
+                <ThemeToggle />
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Sidebar Mode</Label>
