@@ -6,6 +6,7 @@ import { db } from '@/lib/supabase/db'
 import type { MenuItem, Customer, Order } from '@/types/store'
 import { useToast } from "@/components/ui/use-toast"
 import { useMenu } from "@/hooks/use-menu"
+import { actionResponses } from '@/lib/action-responses'
 
 interface MariaContextType {
   menuItems: MenuItem[]
@@ -97,6 +98,27 @@ export function MariaProvider({
           } else {
             const query = encodeURIComponent(data.initialMessage)
             window.location.href = `/maria?query=${query}`
+          }
+          break
+
+        case 'getActionResponse':
+          const actionKey = data.action.toLowerCase()
+          const response = actionResponses[actionKey as keyof typeof actionResponses]
+          if (response) {
+            window.dispatchEvent(new CustomEvent('maria-send-message', {
+              detail: {
+                query: data.query,
+                response: response.details
+              }
+            }))
+          } else {
+            console.warn(`No response found for action: ${actionKey}`)
+            window.dispatchEvent(new CustomEvent('maria-send-message', {
+              detail: {
+                query: data.query,
+                response: "I'm sorry, I don't have specific guidance for that action yet. Please try asking me in a different way or contact support for assistance."
+              }
+            }))
           }
           break
 

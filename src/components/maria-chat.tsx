@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { usePathname } from "next/navigation"
+import { TypingIndicator } from "./typing-indicator"
 
 type Message = {
   id: string
@@ -85,6 +85,49 @@ export function MariaChat() {
     }
   }
 
+  useEffect(() => {
+    const handleTypingStart = () => {
+      setIsLoading(true)
+    }
+
+    const handleSendMessage = (event: CustomEvent) => {
+      if (event.detail) {
+        // Remove welcome message if it exists
+        setMessages(prev => prev.filter(msg => msg.id !== 'welcome'))
+        
+        // Add user message
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          content: event.detail.query || '',
+          role: 'user',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, userMessage])
+
+        // Simulate typing delay before showing response
+        setTimeout(() => {
+          // Add assistant message
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: event.detail.response || event.detail,
+            role: 'assistant',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, assistantMessage])
+          setIsLoading(false)
+        }, 1500) // Adjust typing delay as needed
+      }
+    }
+
+    window.addEventListener('maria-typing-start', handleTypingStart)
+    window.addEventListener('maria-send-message', handleSendMessage as EventListener)
+
+    return () => {
+      window.removeEventListener('maria-typing-start', handleTypingStart)
+      window.removeEventListener('maria-send-message', handleSendMessage as EventListener)
+    }
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     sendMessage(input)
@@ -121,6 +164,16 @@ export function MariaChat() {
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8">
+                <Bot className="h-5 w-5 text-primary" />
+              </Avatar>
+              <div className="rounded-lg px-4 py-2 bg-muted">
+                <TypingIndicator />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
