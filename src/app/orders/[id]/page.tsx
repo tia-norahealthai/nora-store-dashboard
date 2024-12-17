@@ -54,6 +54,9 @@ interface OrderDetails {
   }
 }
 
+// Add this type for valid order statuses
+export type OrderStatus = 'pending' | 'preparing' | 'in_delivery' | 'completed' | 'cancelled'
+
 async function getOrderDetails(orderId: string) {
   const supabase = createServerComponentClient({ cookies })
   

@@ -69,3 +69,15 @@ WHERE EXISTS (
   FROM order_items oi 
   WHERE oi.order_id = o.id
 ); 
+
+-- Add this to your existing migration or create a new one
+ALTER TABLE orders 
+ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'
+CHECK (status IN ('pending', 'preparing', 'in_delivery', 'completed', 'cancelled'));
+
+-- Add some sample data with different statuses
+INSERT INTO orders (status, customer_id, /* other fields */) 
+VALUES 
+  ('pending', /* customer_id */, /* other values */),
+  ('completed', /* customer_id */, /* other values */),
+  ('in_delivery', /* customer_id */, /* other values */);

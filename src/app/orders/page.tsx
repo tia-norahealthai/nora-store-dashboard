@@ -1,3 +1,13 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { AppSidebar } from "@/components/app-sidebar"
+import { ChatSidebar } from "@/components/chat-sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { LayoutGrid, List, Package, Clock, CheckCircle, XCircle } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,149 +16,202 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { ChatSidebar } from "@/components/chat-sidebar"
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/lib/database.types'
-import { formatCurrency } from "@/lib/utils"
-import { OrderCard } from "@/components/order-card"
-import { MetricCard } from "@/components/ui/metric-card"
-import { ShoppingBag, DollarSign, CreditCard, Users } from "lucide-react"
-import type { OrderItem } from "@/types/order"
 import { OrdersTable } from "@/components/orders-table"
-import { Button } from "@/components/ui/button"
-import { LayoutGrid, List } from "lucide-react"
-import { ViewToggle } from "@/components/view-toggle"
+import { OrderCard } from "@/components/order-card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-type Order = Database['public']['Tables']['orders']['Row'] & {
-  customer: Database['public']['Tables']['customers']['Row']
-  restaurant: Database['public']['Tables']['restaurants']['Row']
-  order_items: (Database['public']['Tables']['order_items']['Row'] & {
-    menu_item: Database['public']['Tables']['menu_items']['Row']
-  })[]
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
+
+interface OrderMetrics {
+  total: number
+  pending: number
+  processing: number
+  completed: number
+  cancelled: number
 }
 
-export default async function OrdersPage() {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient<Database>({ 
-    cookies: () => cookieStore 
+export default function OrdersPage() {
+  const [status, setStatus] = useState<OrderStatus | 'all'>('all')
+  const [orders, setOrders] = useState([])
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
+  const [metrics, setMetrics] = useState<OrderMetrics>({
+    total: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    cancelled: 0
   })
-  
-  try {
-    console.log('Fetching orders...')
-    const { data: ordersData, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        customer:customers!customer_id(*),
-        restaurant:restaurants!restaurant_id(*),
-        order_items:order_items!order_id(
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      let query = supabase
+        .from('orders')
+        .select(`
           *,
-          menu_item:menu_items!menu_item_id(*)
-        )
-      `)
-      .order('created_at', { ascending: false })
+          customer:customers(*)
+        `)
+      
+      if (status !== 'all') {
+        query = query.eq('status', status)
+      }
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
+      const { data, error } = await query
+
+      if (!error && data) {
+        setOrders(data)
+        // Calculate metrics
+        const newMetrics = {
+          total: data.length,
+          pending: data.filter(order => order.status === 'pending').length,
+          processing: data.filter(order => order.status === 'processing').length,
+          completed: data.filter(order => order.status === 'completed').length,
+          cancelled: data.filter(order => order.status === 'cancelled').length
+        }
+        setMetrics(newMetrics)
+      }
     }
 
-    if (!ordersData) {
-      console.error('No orders returned')
-      throw new Error('No orders returned')
-    }
+    fetchOrders()
+  }, [status])
 
-    const transformedOrders = ordersData.map(order => ({
-      ...order,
-      customer: order.customer,
-      restaurant: order.restaurant,
-      order_items: order.order_items.map((item: OrderItem) => ({
-        ...item,
-        menu_item: item.menu_item
-      }))
-    })) as Order[]
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Orders</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
 
-    // Calculate metrics
-    const totalOrders = transformedOrders.length
-    const totalRevenue = transformedOrders.reduce((sum, order) => 
-      sum + order.order_items.reduce((itemSum, item) => 
-        itemSum + (item.quantity * item.menu_item.price), 0
-      ), 0
-    )
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
-    const uniqueCustomers = new Set(transformedOrders.map(order => order.customer_id)).size
+        <div className="flex-1 space-y-4 p-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.total}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.pending}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.completed}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cancelled Orders</CardTitle>
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.cancelled}</div>
+              </CardContent>
+            </Card>
+          </div>
 
-    return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset className="flex flex-col h-screen overflow-hidden">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Orders</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Orders</h1>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('table')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
             </div>
-          </header>
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-4">
-              <div className="flex flex-col gap-4 p-4 pt-0">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <MetricCard
-                    title="Total Orders"
-                    value={totalOrders}
-                    description="All time orders"
-                    icon={ShoppingBag}
-                  />
-                  <MetricCard
-                    title="Total Revenue"
-                    value={formatCurrency(totalRevenue)}
-                    description="All time revenue"
-                    icon={DollarSign}
-                  />
-                  <MetricCard
-                    title="Average Order Value"
-                    value={formatCurrency(averageOrderValue)}
-                    description="Per order"
-                    icon={CreditCard}
-                  />
-                  <MetricCard
-                    title="Unique Customers"
-                    value={uniqueCustomers}
-                    description="Total customers"
-                    icon={Users}
-                  />
-                </div>
-                <ViewToggle orders={transformedOrders} />
-              </div>
+          </div>
+
+          <div className="flex gap-2 border-b pb-2">
+            <button
+              onClick={() => setStatus('all')}
+              className={`px-3 py-2 text-sm font-medium rounded-md ${
+                status === 'all' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              All Orders
+            </button>
+            <button
+              onClick={() => setStatus('pending')}
+              className={`px-3 py-2 text-sm font-medium rounded-md ${
+                status === 'pending' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Pending
+            </button>
+            <button
+              onClick={() => setStatus('processing')}
+              className={`px-3 py-2 text-sm font-medium rounded-md ${
+                status === 'processing' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Processing
+            </button>
+            <button
+              onClick={() => setStatus('completed')}
+              className={`px-3 py-2 text-sm font-medium rounded-md ${
+                status === 'completed' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Completed
+            </button>
+            <button
+              onClick={() => setStatus('cancelled')}
+              className={`px-3 py-2 text-sm font-medium rounded-md ${
+                status === 'cancelled' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Cancelled
+            </button>
+          </div>
+
+          {viewMode === 'table' ? (
+            <OrdersTable orders={orders} />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
             </div>
-          </main>
-        </SidebarInset>
-        <ChatSidebar />
-      </SidebarProvider>
-    )
-  } catch (error) {
-    console.error('Detailed error:', error)
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">Error loading orders</h2>
-          <p className="mt-2 text-gray-600">Please check the console for more details</p>
+          )}
         </div>
-      </div>
-    )
-  }
+      </SidebarInset>
+      <ChatSidebar />
+    </SidebarProvider>
+  )
 } 
