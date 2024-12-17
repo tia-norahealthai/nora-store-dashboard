@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Database } from "@/lib/database.types"
+import Image from "next/image"
 
 type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"] & {
   orders_count: number
@@ -14,6 +15,40 @@ type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"] & {
 interface RestaurantCardProps {
   restaurant: Restaurant
   showActions?: boolean
+}
+
+const getValidImageUrl = (url?: string) => {
+  if (!url) return '/images/placeholder-dish.jpg'
+  
+  if (url.startsWith('/')) {
+    return url
+  }
+  
+  if (url.startsWith('data:')) {
+    return url
+  }
+
+  const allowedDomains = [
+    'xyhqystoebgvqjqgmqng.supabase.co',
+    'images.unsplash.com',
+    'images.squarespace-cdn.com',
+    'xtra-static-content.s3.us-east-1.amazonaws.com'
+  ]
+
+  try {
+    const urlToCheck = url.match(/^https?:\/\//) ? url : `https://${url}`
+    const urlObj = new URL(urlToCheck)
+    
+    if (allowedDomains.includes(urlObj.hostname)) {
+      return urlToCheck
+    }
+    
+    console.warn(`Image domain not allowed: ${urlObj.hostname}`)
+    return '/images/placeholder-dish.jpg'
+  } catch (error) {
+    console.warn('Invalid image URL:', url)
+    return '/images/placeholder-dish.jpg'
+  }
 }
 
 export function RestaurantCard({ restaurant, showActions = true }: RestaurantCardProps) {
