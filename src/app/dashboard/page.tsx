@@ -21,9 +21,49 @@ import {
   Store, 
   Clock,
   Calculator,
+  ShoppingBag,
 } from "lucide-react"
 import { OpportunitiesRecap } from "@/components/opportunities-recap"
 import { GrowthPotentialCard } from "@/components/growth-potential-card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RecommendedAction } from "@/components/recommended-action"
+import { Suspense } from "react"
+import { MariaProvider } from "@/contexts/maria-context"
+
+function RecommendedActions() {
+  return (
+    <MariaProvider pageType="dashboard" initialData={null}>
+      <div className="space-y-2">
+        <ul className="space-y-4 text-base">
+          <li>
+            <RecommendedAction
+              title="Optimize Menu Pricing"
+              description="Analyze and adjust menu prices based on demand patterns"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Launch Happy Hour Promotion"
+              description="Create special offers during slower business hours"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Customer Feedback Campaign"
+              description="Start collecting structured feedback from your customers"
+            />
+          </li>
+          <li>
+            <RecommendedAction
+              title="Staff Performance Analysis"
+              description="Review staff efficiency and identify training needs"
+            />
+          </li>
+        </ul>
+      </div>
+    </MariaProvider>
+  )
+}
 
 export default function DashboardPage() {
   // Mock data for restaurant metrics
@@ -131,6 +171,21 @@ export default function DashboardPage() {
                 orderValueIncrease={15}
                 retentionIncrease={15}
               />
+            </div>
+            <div className="grid gap-4 md:grid-cols-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <ShoppingBag className="h-4 w-4" />
+                    Ways to improve your business
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Suspense fallback={<div>Loading recommendations...</div>}>
+                    <RecommendedActions />
+                  </Suspense>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
