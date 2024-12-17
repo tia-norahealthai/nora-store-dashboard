@@ -2,21 +2,17 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import type { Database } from '@/types/supabase'
-
-interface UserWithRoles extends User {
-  roles: string[];
-}
+import type { User } from '@supabase/auth-helpers-nextjs'
 
 interface AuthContextType {
-  user: UserWithRoles | null;
+  user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,68 +21,35 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   signOut: async () => {},
   resetPassword: async () => {},
-  hasRole: () => false
 })
 
 export function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserWithRoles | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const supabase = createClientComponentClient<Database>()
 
-  const fetchUserRoles = async (userId: string) => {
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select(`
-        roles (
-          name
-        )
-      `)
-      .eq('user_id', userId)
-
-    return roles?.map(r => r.roles.name) || []
-  }
-
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setIsLoading(false)
+    })
+
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (session?.user) {
-          const roles = await fetchUserRoles(session.user.id)
-          setUser({ ...session.user, roles })
-          
-          if (event === 'SIGNED_IN') {
-            const isBusinessOwner = roles.includes('business_owner')
-            if (isBusinessOwner) {
-              toast.success('Welcome back!', {
-                description: 'You are now logged in to your business account.',
-                duration: 4000,
-                position: 'top-center',
-              })
-            }
-            router.push('/')
-          }
-        } else {
-          setUser(null)
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error)
-      } finally {
-        setIsLoading(false)
+      setUser(session?.user ?? null)
+      setIsLoading(false)
+
+      if (event === 'SIGNED_OUT') {
+        router.push('/login')
       }
-      
-      router.refresh()
     })
 
     return () => {
       subscription.unsubscribe()
     }
   }, [supabase, router])
-
-  const hasRole = useCallback((role: string) => {
-    return user?.roles?.includes(role) || false
-  }, [user])
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true)
@@ -105,14 +68,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       }
 
       if (data.user) {
-        const roles = await fetchUserRoles(data.user.id)
-        if (roles.includes('business_owner')) {
-          toast.success('Login successful!', {
-            description: 'Welcome to your business dashboard.',
-            position: 'top-center',
-            duration: 4000,
-          })
-        }
+        toast.success('Welcome back!', {
+          description: 'You are now logged in.',
+          position: 'top-center',
+          duration: 4000,
+        })
         router.push('/')
       }
     } catch (error) {
@@ -163,8 +123,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       isLoading,
       signIn, 
       signOut, 
-      resetPassword, 
-      hasRole 
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>

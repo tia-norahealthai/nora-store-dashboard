@@ -77,7 +77,6 @@ export interface Database {
           id: string
           restaurant_id: string
           user_id: string
-          role: string
           created_at: string
           updated_at: string
         }
@@ -85,7 +84,6 @@ export interface Database {
           id?: string
           restaurant_id: string
           user_id: string
-          role?: string
           created_at?: string
           updated_at?: string
         }
@@ -93,9 +91,23 @@ export interface Database {
           id?: string
           restaurant_id?: string
           user_id?: string
-          role?: string
           created_at?: string
           updated_at?: string
+        }
+      }
+      restaurants: {
+        Row: {
+          id: string
+          name: string
+          address: string
+          phone?: string
+          email?: string
+          website?: string
+          logo_url?: string
+          cities?: string[]
+          created_at: string
+          updated_at: string
+          cashback_percentage?: number
         }
       }
     }
@@ -103,3 +115,10 @@ export interface Database {
 }
 
 export type MenuItem = Database['public']['Tables']['menu_items']['Row'] 
+
+export type Restaurant = Database['public']['Tables']['restaurants']['Row'] & {
+  restaurant_locations?: Array<{ count: number }>;
+  restaurant_platforms?: Array<{ count: number }>;
+  locationCount?: number;
+  platformCount?: number;
+}
