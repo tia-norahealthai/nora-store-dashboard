@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { db } from "@/lib/supabase/db"
 import { notFound } from "next/navigation"
-import { Store, Clock, MapPin, Globe, Mail, Phone, Receipt, DollarSign } from "lucide-react"
+import { Store, Clock, MapPin, Globe, Mail, Phone, Receipt, DollarSign, Calculator } from "lucide-react"
 import { MenuItems } from "@/components/menu-items"
 import { AddMenuItemForm } from "@/components/add-menu-item-form"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -90,6 +90,9 @@ export default async function RestaurantPage({ params }: { params: { id: string 
   const totalCosts = totalFixedFees + totalCashback
   const averageCostPerOrder = totalOrders > 0 ? totalCosts / totalOrders : 0
 
+  const totalMarketingCosts = totalCosts
+  const ROAS = totalRevenue > 0 ? totalRevenue / totalMarketingCosts : 0
+
   const metricsData: RestaurantMetrics = {
     totalOrders,
     totalRevenue,
@@ -97,7 +100,9 @@ export default async function RestaurantPage({ params }: { params: { id: string 
     averageCostPerOrder,
     fixedFeeRate,
     cashbackRate,
-    cashbackPercentage: restaurantData.cashback_percentage ?? 0
+    cashbackPercentage: restaurantData.cashback_percentage ?? 0,
+    ROAS,
+    marketingCosts: totalMarketingCosts
   }
 
   const { data: menuItems, error: menuError } = await supabase

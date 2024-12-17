@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { MetricCard } from "@/components/ui/metric-card"
-import { DollarSign, Receipt, Store, Clock } from "lucide-react"
+import { DollarSign, Receipt, Store, Clock, Calculator } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import type { RestaurantMetrics as RestaurantMetricsType } from "@/types/restaurant"
 
@@ -19,7 +19,7 @@ export function RestaurantMetricsCards({
   const [loading, setLoading] = useState(false)
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-5">
       <MetricCard
         title="Total Orders"
         value={metrics.totalOrders}
@@ -48,6 +48,22 @@ export function RestaurantMetricsCards({
           {
             label: `Cashback (${metrics.cashbackPercentage}%)`,
             value: formatCurrency(metrics.averageOrderValue * metrics.cashbackRate)
+          }
+        ]}
+      />
+      <MetricCard
+        title="ROAS"
+        value={metrics.ROAS.toFixed(2)}
+        icon={Calculator}
+        description="Return on Ad Spend"
+        details={[
+          {
+            label: "Marketing Costs",
+            value: formatCurrency(metrics.marketingCosts)
+          },
+          {
+            label: "Revenue",
+            value: formatCurrency(metrics.totalRevenue)
           }
         ]}
       />
