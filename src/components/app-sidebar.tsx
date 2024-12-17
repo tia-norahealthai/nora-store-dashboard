@@ -14,12 +14,12 @@ import {
   SquareTerminal,
   Store,
   MessageSquare,
+  LayoutDashboard,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-// import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -37,28 +37,21 @@ const data = {
     email: "admin@avo.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  // teams: [
-  //   {
-  //     name: "Nora Health AI",
-  //     logo: GalleryVerticalEnd,
-  //     plan: "Business",
-  //   },
-  //   {
-  //     name: "Nora Health AI",
-  //     logo: AudioWaveform,
-  //     plan: "Ownership",
-  //   },
-  //   {
-  //     name: "Nora Health AI",
-  //     logo: Command,
-  //     plan: "Developer",
-  //   },
-  // ],
   navMain: [
     {
-      title: "Dashboard",
-      url: "/",
-      icon: SquareTerminal,
+      title: "Overview",
+      items: [
+        {
+          title: "Home",
+          url: "/",
+          icon: SquareTerminal,
+        },
+        {
+          title: "Dashboard",
+          url: "/dashboard",
+          icon: LayoutDashboard,
+        },
+      ]
     },
     {
       title: "Business",
@@ -121,23 +114,6 @@ const data = {
       icon: Settings2,
     },
   ],
-  // projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
 }
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
