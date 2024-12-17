@@ -93,18 +93,6 @@ export default async function RestaurantPage({ params }: { params: { id: string 
   const totalMarketingCosts = totalCosts
   const ROAS = totalRevenue > 0 ? totalRevenue / totalMarketingCosts : 0
 
-  const metricsData: RestaurantMetrics = {
-    totalOrders,
-    totalRevenue,
-    averageOrderValue,
-    averageCostPerOrder,
-    fixedFeeRate,
-    cashbackRate,
-    cashbackPercentage: restaurantData.cashback_percentage ?? 0,
-    ROAS,
-    marketingCosts: totalMarketingCosts
-  }
-
   const { data: menuItems, error: menuError } = await supabase
     .from('menu_items')
     .select('*')
@@ -115,24 +103,55 @@ export default async function RestaurantPage({ params }: { params: { id: string 
     console.error('Error fetching menu items:', menuError)
   }
 
+  // Group orders by customer and count them
+  const customerOrderCounts = new Map<string, number>()
+  restaurantData.orders?.forEach(order => {
+    const customerId = order.customer.id
+    customerOrderCounts.set(
+      customerId, 
+      (customerOrderCounts.get(customerId) ?? 0) + 1
+    )
+  })
+
+  // Get unique customer IDs from the orders
+  const uniqueCustomerIds = Array.from(customerOrderCounts.keys())
+
+  // Get customer details
   const { data: customers, error: customersError } = await supabase
     .from('customers')
-    .select(`
-      id,
-      name,
-      orders!orders_customer_id_fkey (count)
-    `)
-    .in('id', (restaurantData.orders ?? []).map(order => order.customer.id))
+    .select('id, name')
+    .in('id', uniqueCustomerIds)
 
   if (customersError) {
     console.error('Error fetching customers:', customersError)
   }
 
+  // Calculate repeat customers (customers with more than 1 order)
+  const repeatCustomers = Array.from(customerOrderCounts.entries())
+    .filter(([_, count]) => count > 1)
+
+  const repeatCustomersPercentage = uniqueCustomerIds.length > 0 
+    ? (repeatCustomers.length / uniqueCustomerIds.length) * 100 
+    : 0
+
   const transformedCustomers = (customers ?? []).map(customer => ({
     id: customer.id,
     name: customer.name,
-    orders_count: customer.orders?.[0]?.count ?? 0
+    orders_count: customerOrderCounts.get(customer.id) ?? 0
   }))
+
+  const metricsData: RestaurantMetrics = {
+    totalOrders,
+    totalRevenue,
+    averageOrderValue,
+    averageCostPerOrder,
+    fixedFeeRate,
+    cashbackRate,
+    cashbackPercentage: restaurantData.cashback_percentage ?? 0,
+    ROAS,
+    marketingCosts: totalMarketingCosts,
+    repeatCustomersPercentage
+  }
 
   return (
     <SidebarProvider>

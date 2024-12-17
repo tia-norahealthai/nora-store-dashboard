@@ -37,4 +37,5 @@ export interface RestaurantMetrics {
   cashbackPercentage: number
   ROAS: number
   marketingCosts: number
+  repeatCustomersPercentage: number
 } 
