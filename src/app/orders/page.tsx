@@ -18,6 +18,10 @@ import { OrderCard } from "@/components/order-card"
 import { MetricCard } from "@/components/ui/metric-card"
 import { ShoppingBag, DollarSign, CreditCard, Users } from "lucide-react"
 import type { OrderItem } from "@/types/order"
+import { OrdersTable } from "@/components/orders-table"
+import { Button } from "@/components/ui/button"
+import { LayoutGrid, List } from "lucide-react"
+import { ViewToggle } from "@/components/view-toggle"
 
 type Order = Database['public']['Tables']['orders']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row']
@@ -128,14 +132,7 @@ export default async function OrdersPage() {
                     icon={Users}
                   />
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {transformedOrders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                    />
-                  ))}
-                </div>
+                <ViewToggle orders={transformedOrders} />
               </div>
             </div>
           </main>
