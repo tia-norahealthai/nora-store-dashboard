@@ -127,51 +127,9 @@ export function NavUser() {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-base">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage 
-                    src={user.user_metadata?.avatar_url} 
-                    alt={user.email || ''} 
-                  />
-                  <AvatarFallback className="rounded-lg">
-                    {getInitials(user.user_metadata?.full_name || user.email || '')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-base leading-tight">
-                  <span className="truncate font-semibold">
-                    {user.user_metadata?.full_name || user.email}
-                  </span>
-                  <span className="truncate text-sm">{user.email}</span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck className="mr-2 h-4 w-4" />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard className="mr-2 h-4 w-4" />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
