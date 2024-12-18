@@ -133,9 +133,9 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
 
       {/* Additional Information */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Preparation Info */}
+        {/* Preparation & Availability Info */}
         <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Preparation Info</h2>
+          <h2 className="text-xl font-semibold mb-4">Preparation & Availability</h2>
           <div className="space-y-3">
             {menuItem.preparation_time && (
               <div className="flex items-center gap-2">
@@ -143,10 +143,44 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
                 <span>{menuItem.preparation_time} minutes</span>
               </div>
             )}
-            {menuItem.availability && (
+            {menuItem.available_days && (
               <div className="flex items-center gap-2">
                 <Store className="h-5 w-5 text-muted-foreground" />
-                <span>{menuItem.availability}</span>
+                <div className="flex flex-wrap gap-2">
+                  {menuItem.available_days.map((day) => (
+                    <Badge key={day} variant="outline">{day}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {menuItem.time_ranges && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <div className="text-sm">
+                  {Object.entries(menuItem.time_ranges).map(([day, ranges]) => (
+                    <div key={day} className="mb-1">
+                      <span className="font-medium">{day}: </span>
+                      {Array.isArray(ranges) ? ranges.join(', ') : 'All day'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {menuItem.available_times && (
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <div className="flex flex-wrap gap-2">
+                  {menuItem.available_times.map((time) => (
+                    <Badge key={time} variant="outline">{time}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {menuItem.availability !== undefined && (
+              <div className="flex items-center gap-2">
+                <Badge variant={menuItem.availability ? "success" : "secondary"}>
+                  {menuItem.availability ? 'Available' : 'Not Available'}
+                </Badge>
               </div>
             )}
           </div>
@@ -170,6 +204,12 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
                 {menuItem.allergens.map((allergen) => (
                   <Badge key={allergen} variant="destructive">{allergen}</Badge>
                 ))}
+              </div>
+            )}
+            {menuItem.dressing && (
+              <div className="mt-2">
+                <h3 className="font-semibold mb-1">Dressing</h3>
+                <p>{menuItem.dressing}</p>
               </div>
             )}
           </div>
@@ -201,20 +241,55 @@ export function MenuItemData({ menuItem }: MenuItemDataProps) {
         )}
       </div>
 
-      {/* Health Score */}
-      {menuItem.healthy_score != null && (
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Health Score</h2>
-          <div className="flex items-center gap-4">
-            <div className="text-4xl font-bold">{menuItem.healthy_score}/100</div>
-            <div className="text-muted-foreground">
-              {menuItem.processed_food ? 
-                "Contains processed ingredients" : 
-                "Made with whole ingredients"}
+      {/* Health Information */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Health Information</h2>
+        <div className="space-y-4">
+          {menuItem.healthy_score != null && (
+            <div className="flex items-center gap-4">
+              <div className="text-4xl font-bold">{menuItem.healthy_score}/100</div>
             </div>
+          )}
+          {menuItem.processed_food !== undefined && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-1">Processing Status</h3>
+              <Badge variant={menuItem.processed_food ? "destructive" : "success"}>
+                {menuItem.processed_food ? "Contains processed ingredients" : "Made with whole ingredients"}
+              </Badge>
+            </div>
+          )}
+          {menuItem.average_rating != null && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-1">Average Rating</h3>
+              <div className="text-2xl font-bold">{menuItem.average_rating.toFixed(1)}/5.0</div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Restaurant Information */}
+      {menuItem.restaurant_id && (
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Restaurant Information</h2>
+          <div className="flex items-center gap-2">
+            <Store className="h-5 w-5 text-muted-foreground" />
+            <span>Restaurant ID: {menuItem.restaurant_id}</span>
           </div>
         </Card>
       )}
+
+      {/* Timestamps */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Item History</h2>
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground">
+            Created: {new Date(menuItem.created_at).toLocaleString()}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Last Updated: {new Date(menuItem.updated_at).toLocaleString()}
+          </div>
+        </div>
+      </Card>
     </div>
   )
 } 

@@ -156,13 +156,21 @@ export const db = {
           dressing,
           food_benefits,
           healthy_score,
-          availability
+          availability,
+          available_days,
+          time_ranges,
+          available_times
         `)
         .eq('id', id)
         .single()
       
       if (error) throw error
-      return data
+      return {
+        ...data,
+        is_vegetarian: data?.dietary?.includes('vegetarian') || false,
+        is_vegan: data?.dietary?.includes('vegan') || false,
+        is_gluten_free: data?.dietary?.includes('gluten-free') || false
+      }
     },
 
     async createItem(item: any) {
@@ -222,7 +230,15 @@ export const db = {
           added_sugars,
           processed_food,
           food_benefits,
-          healthy_score
+          healthy_score,
+          available_days,
+          available_times,
+          status,
+          restaurant_id,
+          created_at,
+          updated_at,
+          average_rating,
+          dressing
         `)
       
       if (error) {

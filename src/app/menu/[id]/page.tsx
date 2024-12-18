@@ -26,10 +26,7 @@ export default async function MenuItemPage({
 }: {
   params: { id: string }
 }) {
-  const items = await db.menu.getItemsWithNutrition()
-  const menuItem = items.find(item => item.id === params.id)
-
-  console.log('Menu Item Data:', menuItem)
+  const menuItem = await db.menu.getItem(params.id)
 
   if (!menuItem) {
     notFound()

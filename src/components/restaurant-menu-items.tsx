@@ -83,6 +83,11 @@ export function RestaurantMenuItems({ restaurantId }: RestaurantMenuItemsProps) 
               <TableHead>Description</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Dietary</TableHead>
+              <TableHead>Allergens</TableHead>
+              <TableHead>Nutrition</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -93,6 +98,54 @@ export function RestaurantMenuItems({ restaurantId }: RestaurantMenuItemsProps) 
                 <TableCell>{item.description}</TableCell>
                 <TableCell>{item.category}</TableCell>
                 <TableCell>${item.price.toFixed(2)}</TableCell>
+                <TableCell>{item.type}</TableCell>
+                <TableCell>
+                  {item.dietary && item.dietary.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {item.dietary.map((diet, index) => (
+                        <Badge key={index} variant="outline">
+                          {diet}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : '-'}
+                </TableCell>
+                <TableCell>
+                  {item.allergens && item.allergens.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {item.allergens.map((allergen, index) => (
+                        <Badge key={index} variant="destructive" className="bg-red-100 text-red-800">
+                          {allergen}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : 'None'}
+                </TableCell>
+                <TableCell>
+                  {item.calories && (
+                    <div className="text-sm">
+                      <div>{item.calories} cal</div>
+                      {item.protein && <div>Protein: {item.protein}g</div>}
+                      {item.carbohydrates && <div>Carbs: {item.carbohydrates}g</div>}
+                      {item.fat && <div>Fat: {item.fat}g</div>}
+                      {item.fiber && <div>Fiber: {item.fiber}g</div>}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    {item.available_days && (
+                      <div className="mb-1">
+                        Days: {item.available_days.join(', ')}
+                      </div>
+                    )}
+                    {item.available_times && (
+                      <div>
+                        Times: {item.available_times.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Badge variant={item.status === "active" ? "success" : "secondary"}>
                     {item.status || 'active'}
