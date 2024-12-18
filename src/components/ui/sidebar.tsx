@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { usePathname } from "next/navigation"
+import { RoleBadge } from '@/components/role-badge'
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -362,9 +363,19 @@ const SidebarHeader = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
-      {...props}
-    />
+      className={cn(
+        "flex flex-col gap-2 p-4 border-b border-sidebar-border",
+        className
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h2 className="text-sm font-semibold">Account</h2>
+          <RoleBadge />
+        </div>
+      </div>
+      {props.children}
+    </div>
   )
 })
 SidebarHeader.displayName = "SidebarHeader"

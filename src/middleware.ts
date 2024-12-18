@@ -4,6 +4,8 @@ import type { NextRequest } from 'next/server'
 
 const PUBLIC_ROUTES = ['/login', '/reset-password']
 const PROTECTED_ROUTES = ['/restaurants', '/menu', '/customers', '/orders']
+const ADMIN_ROUTES = ['/admin']
+const BUSINESS_ROUTES = ['/restaurants', '/menu', '/customers', '/orders']
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
@@ -14,7 +16,10 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   const isPublicRoute = PUBLIC_ROUTES.includes(req.nextUrl.pathname)
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => 
+  const isAdminRoute = ADMIN_ROUTES.some(route => 
+    req.nextUrl.pathname.startsWith(route)
+  )
+  const isBusinessRoute = BUSINESS_ROUTES.some(route => 
     req.nextUrl.pathname.startsWith(route)
   )
 
@@ -27,8 +32,30 @@ export async function middleware(req: NextRequest) {
   }
 
   // Handle protected routes
-  if (isProtectedRoute && !session) {
+  if (!session) {
     return NextResponse.redirect(new URL('/login', req.url))
+  }
+
+  // Check admin routes
+  if (isAdminRoute) {
+    const { data: isAdmin } = await supabase.rpc('has_role', { 
+      role_name: 'admin' 
+    })
+    
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url))
+    }
+  }
+
+  // Check business routes
+  if (isBusinessRoute) {
+    const { data: isBusinessOwner } = await supabase.rpc('has_role', { 
+      role_name: 'business_owner' 
+    })
+    
+    if (!isBusinessOwner) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url))
+    }
   }
 
   return res

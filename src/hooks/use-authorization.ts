@@ -1,24 +1,40 @@
 import { useAuth } from '@/components/providers/supabase-auth-provider'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export function useAuthorization(allowedRoles: string[]) {
   const { user, hasRole } = useAuth()
   const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
-      return
+    async function checkAuthorization() {
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      try {
+        const hasPermission = await Promise.all(
+          allowedRoles.map(role => hasRole(role))
+        ).then(results => results.some(Boolean))
+
+        setIsAuthorized(hasPermission)
+        
+        if (!hasPermission) {
+          router.push('/unauthorized')
+        }
+      } catch (error) {
+        console.error('Authorization check failed:', error)
+        router.push('/unauthorized')
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const hasPermission = allowedRoles.some(role => hasRole(role))
-    if (!hasPermission) {
-      router.push('/unauthorized')
-    }
+    checkAuthorization()
   }, [user, hasRole, router, allowedRoles])
 
-  return {
-    isAuthorized: allowedRoles.some(role => hasRole(role))
-  }
+  return { isAuthorized, isLoading }
 } 
