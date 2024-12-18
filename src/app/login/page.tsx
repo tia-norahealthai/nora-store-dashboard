@@ -11,11 +11,23 @@ import { toast } from 'sonner'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Logo } from '@/components/ui/logo'
 import Image from 'next/image'
+import Link from 'next/link'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
   const router = useRouter()
   const supabase = createClientComponentClient()
 
@@ -44,6 +56,37 @@ export default function LoginPage() {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!resetEmail) {
+      toast.error('Please enter your email address')
+      return
+    }
+
+    setIsResetting(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      setIsDialogOpen(false)
+      toast.success('Password reset link sent', {
+        description: 'Please check your email for further instructions'
+      })
+    } catch (error) {
+      console.error('Reset password error:', error)
+      toast.error('Failed to send reset link', {
+        description: 'Please try again later'
+      })
+    } finally {
+      setIsResetting(false)
     }
   }
 
@@ -78,7 +121,18 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setIsDialogOpen(true)
+                    }}
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
                   <Input
@@ -132,6 +186,50 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="pl-9"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleForgotPassword}
+              disabled={isResetting}
+              className="w-full"
+            >
+              {isResetting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending reset link...
+                </>
+              ) : (
+                'Send reset link'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
