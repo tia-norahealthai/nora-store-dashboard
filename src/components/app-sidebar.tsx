@@ -2,23 +2,18 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
   Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
   Settings2,
-  SquareTerminal,
-  Store,
   MessageSquare,
   LayoutDashboard,
+  ShoppingBag,
+  Utensils,
+  TrendingUp,
+  Home,
+  Users,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -29,27 +24,28 @@ import {
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+import { useAuthorization } from '@/hooks/use-authorization'
 
-// This is sample data.
+// Navigation data structure
 const data = {
-  user: {
-    name: "Avo Admin",
-    email: "admin@avo.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Overview",
       items: [
         {
-          title: "Home",
+          title: "Homepage",
           url: "/",
-          icon: SquareTerminal,
+          icon: Home,
+          showForAdmin: true,
         },
         {
           title: "Dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
+          hideForAdmin: true,
         },
       ]
     },
@@ -59,37 +55,23 @@ const data = {
         {
           title: "Orders",
           url: "/orders",
-          icon: Store,
+          icon: ShoppingBag,
         },
         {
           title: "Customers",
           url: "/customers",
-          icon: MessageSquare,
+          icon: Users,
+          showForAdmin: true,
         },
         {
-          title: "Restaurants",
-          url: "/restaurants",
-          icon: Store,
+          title: "Menu",
+          url: "/menu",
+          icon: Utensils,
         },
         {
           title: "Opportunities",
           url: "/opportunities",
-          icon: PieChart,
-        },
-        {
-          title: "Invoices",
-          url: "/invoices",
-          icon: Frame,
-        }
-      ]
-    },
-    {
-      title: "Restaurant",
-      items: [
-        {
-          title: "Menu",
-          url: "/menu",
-          icon: Store,
+          icon: TrendingUp,
         },
       ]
     },
@@ -121,6 +103,43 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ collapsed, ...props }: AppSidebarProps) {
+  const { isAdmin, allowedPaths, isLoading } = useAuthorization()
+
+  if (isLoading) {
+    return <div className="p-4">Loading...</div>
+  }
+
+  // Filter navigation for business owner and admin
+  const filteredNavMain = data.navMain.map(section => {
+    if (section.items) {
+      return {
+        ...section,
+        items: section.items.filter(item =>
+          (item.showForAdmin ? isAdmin : true) &&
+          (!isAdmin || !item.hideForAdmin) &&
+          (isAdmin || allowedPaths.some(path =>
+            path === item.url ||
+            item.url.startsWith(path + '/') ||
+            path.startsWith(item.url + '/')
+          ))
+        )
+      }
+    }
+    return section
+  }).filter(section => section.items?.length > 0 || section.url)
+
+  // For sections with direct URLs (like Settings), check the URL against allowed paths
+  const finalNavMain = filteredNavMain.filter(section => {
+    if (section.url) {
+      return isAdmin || allowedPaths.some(path =>
+        path === section.url ||
+        section.url.startsWith(path + '/') ||
+        path.startsWith(section.url + '/')
+      )
+    }
+    return true
+  })
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -138,7 +157,7 @@ export function AppSidebar({ collapsed, ...props }: AppSidebarProps) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={finalNavMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

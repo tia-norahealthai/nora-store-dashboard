@@ -3,9 +3,10 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from 'sonner'
-import { SupabaseAuthProvider } from '@/components/providers/supabase-auth-provider'
+import { AuthProvider } from '@/components/providers/supabase-auth-provider'
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { ThemeScript } from "@/lib/theme-script"
+import { AppSidebar } from "@/components/app-sidebar"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,11 +37,13 @@ export default function RootLayout({
       </head>
       <body className={`antialiased ${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider
+          attribute="class"
           defaultTheme="light"
+          enableSystem
         >
-          <SupabaseAuthProvider>
+          <AuthProvider>
             {children}
-          </SupabaseAuthProvider>
+          </AuthProvider>
         </ThemeProvider>
         <SonnerToaster />
       </body>

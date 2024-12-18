@@ -1,12 +1,17 @@
 import React from 'react'
 
 export function ThemeScript() {
-  const themeScript = `
-    try {
-      const theme = localStorage.getItem('theme') || 'light'
-      document.documentElement.classList.add(theme)
-    } catch (e) {}
-  `
-
-  return <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          let isDark = window.matchMedia('(prefers-color-scheme: dark)')
+          let theme = localStorage.getItem('theme')
+          if (theme === 'dark' || (!theme && isDark.matches)) {
+            document.documentElement.classList.add('dark')
+          }
+        `,
+      }}
+    />
+  )
 } 

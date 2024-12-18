@@ -1,37 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/components/providers/supabase-auth-provider'
 import { Loader2, ShieldCheck, Store } from 'lucide-react'
+import { useAuthorization } from '@/hooks/use-authorization'
 
 export function RoleBadge() {
-  const [role, setRole] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const { hasRole } = useAuth()
+  const { role, isLoading, error } = useAuthorization()
 
-  useEffect(() => {
-    async function checkRoles() {
-      try {
-        const isAdmin = await hasRole('admin')
-        if (isAdmin) {
-          setRole('Admin')
-          return
-        }
-        
-        const isBusinessOwner = await hasRole('business_owner')
-        if (isBusinessOwner) {
-          setRole('Business Owner')
-        }
-      } catch (error) {
-        console.error('Error checking roles:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkRoles()
-  }, [hasRole])
+  if (error) {
+    return (
+      <Badge 
+        variant="destructive" 
+        className="gap-2 font-normal"
+      >
+        {error}
+      </Badge>
+    )
+  }
 
   if (isLoading) {
     return (

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { userId, role } = await request.json()
+    const { userId } = await request.json()
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
@@ -23,20 +23,19 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update user's role
+    // Assign admin role
     const { error } = await supabase
-      .rpc('manage_user_role', {
-        target_user_id: userId,
-        new_role: role
+      .rpc('assign_admin_role', {
+        target_user_id: userId
       })
 
     if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error managing role:', error)
+    console.error('Error assigning admin role:', error)
     return NextResponse.json(
-      { error: 'Failed to update role' },
+      { error: 'Failed to assign admin role' },
       { status: 500 }
     )
   }
