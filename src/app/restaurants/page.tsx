@@ -18,11 +18,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
-import { RestaurantCard } from "@/components/restaurant-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Store, ShoppingBag } from "lucide-react"
 import { RestaurantHeader } from "@/components/restaurant-header"
 import { redirect } from "next/navigation"
+import { RestaurantsTable } from "@/components/restaurants-table"
 
 export const dynamic = 'force-dynamic'
 
@@ -127,14 +127,7 @@ export default async function RestaurantsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {transformedRestaurantsData.map((restaurant) => (
-                      <RestaurantCard 
-                        key={restaurant.id} 
-                        restaurant={restaurant}
-                      />
-                    ))}
-                  </div>
+                  <RestaurantsTable initialData={transformedRestaurantsData} />
                 )}
               </Suspense>
             </div>

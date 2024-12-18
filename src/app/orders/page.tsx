@@ -6,8 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
-import { LayoutGrid, List, Package, Clock, CheckCircle, XCircle } from "lucide-react"
+import { Package, Clock, CheckCircle, XCircle } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,7 +16,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { OrdersTable } from "@/components/orders-table"
-import { OrderCard } from "@/components/order-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from '@/components/providers/supabase-auth-provider'
 
@@ -34,7 +32,6 @@ interface OrderMetrics {
 export default function OrdersPage() {
   const [status, setStatus] = useState<OrderStatus | 'all'>('all')
   const [orders, setOrders] = useState([])
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [metrics, setMetrics] = useState<OrderMetrics>({
     total: 0,
     pending: 0,
@@ -49,39 +46,50 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
       if (!user) return
 
-      // First, get the user's restaurants
-      const { data: userRestaurants, error: restaurantsError } = await supabase
-        .from('restaurant_users')
-        .select('restaurant_id')
-        .eq('user_id', user.id)
-
-      if (restaurantsError) {
-        console.error('Error fetching user restaurants:', restaurantsError)
-        return
-      }
-
-      const restaurantIds = userRestaurants.map(r => r.restaurant_id)
-
-      // If user has no restaurants, return empty array
-      if (restaurantIds.length === 0) {
-        setOrders([])
-        setMetrics({
-          total: 0,
-          pending: 0,
-          processing: 0,
-          completed: 0,
-          cancelled: 0
-        })
-        return
-      }
-
       let query = supabase
         .from('orders')
         .select(`
           *,
           customer:customers(*)
         `)
-        .in('restaurant_id', restaurantIds)
+
+      // Check if user is admin
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+
+      const isAdmin = roles?.some(r => r.role === 'admin') ?? false
+
+      // If not admin, filter by user's restaurants
+      if (!isAdmin) {
+        const { data: userRestaurants, error: restaurantsError } = await supabase
+          .from('restaurant_users')
+          .select('restaurant_id')
+          .eq('user_id', user.id)
+
+        if (restaurantsError) {
+          console.error('Error fetching user restaurants:', restaurantsError)
+          return
+        }
+
+        const restaurantIds = userRestaurants.map(r => r.restaurant_id)
+
+        // If user has no restaurants, return empty array
+        if (restaurantIds.length === 0) {
+          setOrders([])
+          setMetrics({
+            total: 0,
+            pending: 0,
+            processing: 0,
+            completed: 0,
+            cancelled: 0
+          })
+          return
+        }
+
+        query = query.in('restaurant_id', restaurantIds)
+      }
       
       if (status !== 'all') {
         query = query.eq('status', status)
@@ -170,22 +178,6 @@ export default function OrdersPage() {
 
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Orders</h1>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('table')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('grid')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
 
           <div className="flex gap-2 border-b pb-2">
@@ -231,15 +223,7 @@ export default function OrdersPage() {
             </button>
           </div>
 
-          {viewMode === 'table' ? (
-            <OrdersTable orders={orders} />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {orders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
-          )}
+          <OrdersTable orders={orders} />
         </div>
       </SidebarInset>
       <ChatSidebar />
