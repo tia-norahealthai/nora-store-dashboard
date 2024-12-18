@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Lock, Mail, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Logo } from '@/components/ui/logo'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -46,59 +48,90 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9"
-                  required
-                />
-              </div>
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Login Form */}
+      <div className="flex items-center justify-center p-4">
+        <Card className="w-full max-w-[400px] border-0 shadow-none">
+          <CardHeader className="space-y-2 text-center pb-2">
+            <div className="flex justify-center py-4">
+              <Logo width={140} height={46} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9"
-                  required
-                />
+            <CardTitle className="text-xl font-medium">Welcome back</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-8">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-9"
+                    required
+                    autoComplete="email"
+                    autoFocus
+                  />
+                </div>
               </div>
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-9"
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full mt-2"
+                disabled={isLoading}
+                size="lg"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Image Section */}
+      <div className="hidden lg:block relative bg-muted">
+        <Image
+          src="/restaurant-people.jpg"
+          alt="Happy people at restaurant"
+          fill
+          className="object-cover opacity-90"
+          priority
+          quality={100}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+          <h2 className="text-3xl font-semibold tracking-tight text-white">
+            Manage your business
+          </h2>
+          <p className="text-lg text-slate-200 max-w-md">
+            Streamline operations and delight your customers with the power of AI
+          </p>
+        </div>
+      </div>
     </div>
   )
 } 

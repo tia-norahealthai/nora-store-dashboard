@@ -11,10 +11,11 @@ export function Logo({ className, width = 120, height = 40 }: LogoProps) {
     <div className={className}>
       <Image
         src="/nora-logo.svg"
-        alt="Nora Logo"
+        alt="Nora"
         width={width}
         height={height}
         priority
+        className="dark:invert"
       />
     </div>
   )
