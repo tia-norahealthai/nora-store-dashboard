@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Home,
   Users,
+  Store,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -61,6 +62,12 @@ const data = {
           title: "Customers",
           url: "/customers",
           icon: Users,
+          showForAdmin: true,
+        },
+        {
+          title: "Restaurants",
+          url: "/restaurants",
+          icon: Store,
           showForAdmin: true,
         },
         {
