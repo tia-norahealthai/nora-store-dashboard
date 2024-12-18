@@ -145,6 +145,26 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Cashback Percentage</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Set the cashback percentage for customer orders
+                    </div>
+                  </div>
+                  <Select defaultValue="5">
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select percentage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0%</SelectItem>
+                      <SelectItem value="2">2%</SelectItem>
+                      <SelectItem value="5">5%</SelectItem>
+                      <SelectItem value="10">10%</SelectItem>
+                      <SelectItem value="15">15%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           </div>
