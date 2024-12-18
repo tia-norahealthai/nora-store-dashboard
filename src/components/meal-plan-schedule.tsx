@@ -523,9 +523,15 @@ export function MealPlanSchedule({
     day: string, 
     time: string
   ) => {
+    // First ensure allItems exists and is an array
+    if (!Array.isArray(allItems)) {
+      return []
+    }
+
     return allItems.filter(item => 
-      item.available_days.includes(day.toLowerCase()) &&
-      item.available_times.includes(time.toLowerCase())
+      // Add null checks for available_days and available_times
+      item.available_days?.includes(day.toLowerCase()) &&
+      item.available_times?.includes(time.toLowerCase())
     )
   }
 
@@ -649,7 +655,7 @@ export function MealPlanSchedule({
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {getAvailableMenuItems(menuItemsByCategory[itemType], selectedDay, time)
+                          {getAvailableMenuItems(menuItemsByCategory[itemType] || [], selectedDay, time)
                             .map(item => (
                               <SelectItem 
                                 key={item.id} 
@@ -657,10 +663,10 @@ export function MealPlanSchedule({
                                 disabled={hasAllergenConflict(item)}
                                 className={cn(
                                   "flex items-center gap-2",
-                                  hasConflict && "text-destructive relative pl-8"
+                                  hasAllergenConflict(item) && "text-destructive relative pl-8"
                                 )}
                               >
-                                {hasConflict && (
+                                {hasAllergenConflict(item) && (
                                   <AlertCircle className="h-4 w-4 absolute left-2" />
                                 )}
                                 <div className="flex items-center gap-2 flex-1">
@@ -671,7 +677,7 @@ export function MealPlanSchedule({
                                   />
                                   <span className="font-medium truncate">
                                     {item.name}
-                                    {hasConflict && (
+                                    {hasAllergenConflict(item) && (
                                       <span className="ml-2 text-xs text-destructive">
                                         (Contains allergens)
                                       </span>
