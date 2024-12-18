@@ -58,6 +58,7 @@ export default async function MenuPage() {
     const isAdmin = roles?.some(r => r.role === 'admin') ?? false
 
     let menuItems;
+    let userRestaurants;
     if (isAdmin) {
       // Admin can see all menu items
       const { data: allMenuItems, error: menuError } = await supabase
@@ -72,7 +73,7 @@ export default async function MenuPage() {
       menuItems = allMenuItems
     } else {
       // Regular users can only see their restaurant's menu items
-      const { data: userRestaurants, error: restaurantsError } = await supabase
+      const { data: restaurants, error: restaurantsError } = await supabase
         .from('restaurant_users')
         .select('restaurant_id')
         .eq('user_id', session.user.id)
@@ -82,6 +83,7 @@ export default async function MenuPage() {
         throw restaurantsError
       }
 
+      userRestaurants = restaurants
       console.log('User restaurants:', userRestaurants)
 
       const restaurantIds = userRestaurants.map(r => r.restaurant_id)
@@ -173,7 +175,7 @@ export default async function MenuPage() {
               <div className="flex flex-col gap-4 p-4 pt-0 w-full">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-semibold tracking-tight">Menu Items</h2>
-                  <AddMenuItemForm restaurantId={isAdmin ? undefined : userRestaurants[0].restaurant_id} />
+                  <AddMenuItemForm restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} />
                 </div>
                 <div className="text-center py-8 text-muted-foreground">
                   No menu items found. Click the "Add Menu Item" button above to create your first menu item.
@@ -211,7 +213,7 @@ export default async function MenuPage() {
             <div className="flex flex-col gap-4 p-4 pt-0 w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold tracking-tight">Menu Items</h2>
-                <AddMenuItemForm restaurantId={isAdmin ? undefined : userRestaurants[0].restaurant_id} />
+                <AddMenuItemForm restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} />
               </div>
               
               <Suspense fallback={<div>Loading menu items...</div>}>

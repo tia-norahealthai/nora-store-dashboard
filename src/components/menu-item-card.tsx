@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Store } from "lucide-react"
 import { MenuItem } from "@/lib/types"
+import { useRouter } from "next/navigation"
 
 interface MenuItemCardProps {
   item: MenuItem
@@ -21,12 +22,16 @@ function isValidUrl(url: string | null | undefined): boolean {
 }
 
 export function MenuItemCard({ item }: MenuItemCardProps) {
+  const router = useRouter()
   const imageUrl = isValidUrl(item.image_url) 
     ? item.image_url 
     : '/placeholder-food.jpg' // Make sure to add this image to your public directory
 
   return (
-    <Card className="overflow-hidden">
+    <Card 
+      className="overflow-hidden cursor-pointer transition-all hover:shadow-lg"
+      onClick={() => router.push(`/menu/${item.id}`)}
+    >
       <div className="p-6">
         <div className="relative w-full aspect-[4/3] mb-4 rounded-md overflow-hidden">
           <Image
