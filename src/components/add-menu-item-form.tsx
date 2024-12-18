@@ -33,25 +33,43 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
 
   // Fetch restaurants when component mounts
   useEffect(() => {
-    async function fetchRestaurants() {
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('id, name')
-        .order('name');
+    async function loadRestaurants() {
+      try {
+        setIsLoading(true)
+        
+        // Get the current user's ID
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
 
-      if (error) {
-        console.error('Error fetching restaurants:', error);
-        return;
-      }
+        // Get restaurants owned by the user
+        const { data: userRestaurants, error: restaurantsError } = await supabase
+          .from('restaurant_users')
+          .select('restaurant_id')
+          .eq('user_id', session.user.id)
 
-      setRestaurants(data || []);
-      if (!restaurantId && data?.[0]) {
-        setSelectedRestaurant(data[0].id);
+        if (restaurantsError) throw restaurantsError
+
+        const restaurantIds = userRestaurants.map(r => r.restaurant_id)
+
+        // Get restaurant details
+        const { data: restaurantsData, error: detailsError } = await supabase
+          .from('restaurants')
+          .select('*')
+          .in('id', restaurantIds)
+          .order('name')
+
+        if (detailsError) throw detailsError
+        
+        setRestaurants(restaurantsData)
+      } catch (error) {
+        console.error('Error loading restaurants:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    fetchRestaurants();
-  }, [restaurantId, supabase]);
+    loadRestaurants()
+  }, [supabase])
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()

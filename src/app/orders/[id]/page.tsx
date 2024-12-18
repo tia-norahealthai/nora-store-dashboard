@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -18,9 +21,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Clock, DollarSign, MapPin, Package, User } from "lucide-react"
 import { ChatSidebar } from "@/components/chat-sidebar"
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { notFound } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+import { useRouter, useParams } from 'next/navigation'
 
 // Add this interface for type safety
 interface OrderDetails {
@@ -32,6 +35,10 @@ interface OrderDetails {
     avatar: string
     phone: string
     address: string
+  }
+  restaurant: {
+    id: string
+    name: string
   }
   items: {
     id: string
@@ -52,88 +59,129 @@ interface OrderDetails {
     estimated: string
     completed: string | null
   }
+  restaurant_id: string
 }
 
-// Add this type for valid order statuses
-export type OrderStatus = 'pending' | 'preparing' | 'in_delivery' | 'completed' | 'cancelled'
+export default function OrderDetailsPage() {
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClientComponentClient()
+  const { user } = useAuth()
+  const router = useRouter()
+  const params = useParams()
+  const orderId = params?.id as string
 
-async function getOrderDetails(orderId: string) {
-  const supabase = createServerComponentClient({ cookies })
-  
-  const { data: order, error } = await supabase
-    .from('orders')
-    .select(`
-      *,
-      customer:customers(*),
-      items:order_items(
-        id,
-        menu_items(name, price),
-        quantity,
-        notes
-      )
-    `)
-    .eq('id', orderId)
-    .single()
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (!user || !orderId) return
 
-  if (error || !order) {
-    return null
-  }
+      try {
+        // First, get the user's restaurants
+        const { data: userRestaurants, error: restaurantsError } = await supabase
+          .from('restaurant_users')
+          .select('restaurant_id')
+          .eq('user_id', user.id)
 
-  // Calculate subtotal from items
-  const subtotal = order.items.reduce((sum: number, item: any) => {
-    return sum + (item.menu_items.price * item.quantity)
-  }, 0)
+        if (restaurantsError) throw restaurantsError
 
-  // Calculate tax (assuming 10% tax rate - adjust as needed)
-  const taxRate = 0.1
-  const tax = subtotal * taxRate
+        const restaurantIds = userRestaurants.map(r => r.restaurant_id)
 
-  // Delivery fee (you can adjust this or fetch from order if stored)
-  const deliveryFee = order.delivery_fee || 5.00
+        // Get the order details with restaurant information
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            customer:customers(*),
+            restaurant:restaurants!inner(*),
+            items:order_items(
+              id,
+              menu_items(name, price),
+              quantity,
+              notes
+            )
+          `)
+          .eq('id', orderId)
+          .single()
 
-  // Calculate total
-  const total = subtotal + tax + deliveryFee
+        if (orderError) throw orderError
 
-  // Transform the data to match our interface
-  const orderDetails: OrderDetails = {
-    id: order.id,
-    status: order.status,
-    customer: {
-      name: order.customer.name,
-      email: order.customer.email,
-      avatar: order.customer.avatar || order.customer.name.substring(0, 2).toUpperCase(),
-      phone: order.customer.phone,
-      address: order.customer.address
-    },
-    items: order.items.map((item: any) => ({
-      id: item.id,
-      name: item.menu_items.name,
-      quantity: item.quantity,
-      price: item.menu_items.price,
-      notes: item.notes || ''
-    })),
-    payment: {
-      method: order.payment_method,
-      subtotal: subtotal,
-      tax: tax,
-      delivery: deliveryFee,
-      total: total
-    },
-    timestamps: {
-      placed: order.created_at,
-      estimated: order.estimated_delivery,
-      completed: order.completed_at
+        // Check if the order belongs to one of the user's restaurants
+        if (!restaurantIds.includes(order.restaurant_id)) {
+          router.push('/orders')
+          return
+        }
+
+        // Calculate subtotal from items
+        const subtotal = order.items.reduce((sum: number, item: any) => {
+          return sum + (item.menu_items.price * item.quantity)
+        }, 0)
+
+        // Calculate tax (assuming 10% tax rate - adjust as needed)
+        const taxRate = 0.1
+        const tax = subtotal * taxRate
+
+        // Delivery fee (you can adjust this or fetch from order if stored)
+        const deliveryFee = order.delivery_fee || 5.00
+
+        // Calculate total
+        const total = subtotal + tax + deliveryFee
+
+        // Transform the data to match our interface
+        const orderDetails: OrderDetails = {
+          id: order.id,
+          status: order.status,
+          customer: {
+            name: order.customer.name,
+            email: order.customer.email,
+            avatar: order.customer.avatar || order.customer.name.substring(0, 2).toUpperCase(),
+            phone: order.customer.phone,
+            address: order.customer.address
+          },
+          restaurant: {
+            id: order.restaurant.id,
+            name: order.restaurant.name
+          },
+          items: order.items.map((item: any) => ({
+            id: item.id,
+            name: item.menu_items.name,
+            quantity: item.quantity,
+            price: item.menu_items.price,
+            notes: item.notes || ''
+          })),
+          payment: {
+            method: order.payment_method,
+            subtotal: subtotal,
+            tax: tax,
+            delivery: deliveryFee,
+            total: total
+          },
+          timestamps: {
+            placed: order.created_at,
+            estimated: order.estimated_delivery,
+            completed: order.completed_at
+          },
+          restaurant_id: order.restaurant_id
+        }
+
+        setOrderDetails(orderDetails)
+      } catch (error) {
+        console.error('Error fetching order details:', error)
+        setError('Failed to load order details')
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    fetchOrderDetails()
+  }, [orderId, user])
+
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
-  return orderDetails
-}
-
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
-  const orderDetails = await getOrderDetails(params.id)
-
-  if (!orderDetails) {
-    notFound()
+  if (error || !orderDetails) {
+    return <div>Error: {error || 'Order not found'}</div>
   }
 
   return (
@@ -161,15 +209,20 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
             </Breadcrumb>
           </div>
         </header>
-        
+
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Order Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-bold">Order {orderDetails.id}</h1>
-              <p className="text-muted-foreground">
-                Placed on {new Date(orderDetails.timestamps.placed).toLocaleString()}
-              </p>
+              <div className="space-y-1">
+                <p className="text-muted-foreground">
+                  Placed on {new Date(orderDetails.timestamps.placed).toLocaleString()}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Restaurant: {orderDetails.restaurant.name}
+                </p>
+              </div>
             </div>
             <Badge variant={orderDetails.status === "completed" ? "success" : "pending"} className="w-fit">
               {orderDetails.status.charAt(0).toUpperCase() + orderDetails.status.slice(1)}
@@ -267,20 +320,20 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
                 <div className="mt-6 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>${(orderDetails.payment.subtotal || 0).toFixed(2)}</span>
+                    <span>${orderDetails.payment.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>${(orderDetails.payment.tax || 0).toFixed(2)}</span>
+                    <span>${orderDetails.payment.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery</span>
-                    <span>${(orderDetails.payment.delivery || 0).toFixed(2)}</span>
+                    <span>${orderDetails.payment.delivery.toFixed(2)}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between font-medium">
                     <span>Total</span>
-                    <span>${(orderDetails.payment.total || 0).toFixed(2)}</span>
+                    <span>${orderDetails.payment.total.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>

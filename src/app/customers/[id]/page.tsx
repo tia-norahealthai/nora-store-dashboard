@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { CustomerOrdersTable } from "@/components/customer-orders-table"
-import { Calendar } from "lucide-react"
+import { Calendar, User, DollarSign, Heart, Scale } from "lucide-react"
 import { CustomerMealPlan } from "@/components/customer-meal-plan"
 
 export const dynamic = 'force-dynamic'
@@ -61,11 +61,15 @@ export default async function CustomerPage({ params }: PageProps) {
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0 pb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Basic Information */}
               <Card className="p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Customer Information</h2>
-                </div>
-                <div className="space-y-4">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Basic Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 space-y-4">
                   <div>
                     <Label className="text-sm text-muted-foreground">Name</Label>
                     <p className="text-lg font-medium">{customer.name}</p>
@@ -80,36 +84,94 @@ export default async function CustomerPage({ params }: PageProps) {
                       <p className="text-lg">{customer.phone}</p>
                     </div>
                   )}
-                  {customer.address && (
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Address</Label>
-                      <p className="text-lg">{customer.address}</p>
-                    </div>
-                  )}
-                  {customer.dietary_preferences && (
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Dietary Preferences</Label>
-                      <p className="text-lg">{customer.dietary_preferences}</p>
-                    </div>
-                  )}
-                  {customer.allergens && (
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Allergens</Label>
-                      <p className="text-lg">{customer.allergens}</p>
-                    </div>
-                  )}
                   <div>
                     <Label className="text-sm text-muted-foreground">Customer Since</Label>
                     <p className="text-lg">{formatDate(customer.created_at)}</p>
                   </div>
-                </div>
+                </CardContent>
               </Card>
 
+              {/* Health Information */}
               <Card className="p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Budget Information</h2>
-                </div>
-                <div className="space-y-4">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <Scale className="h-5 w-5" />
+                    Health Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 space-y-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Height</Label>
+                    <p className="text-lg">
+                      {customer.height_feet ? `${customer.height_feet}'${customer.height_inches || 0}"` : 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Current Weight</Label>
+                    <p className="text-lg">
+                      {customer.weight ? `${customer.weight} lbs` : 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Weight Goal</Label>
+                    <p className="text-lg">
+                      {customer.weight_goal ? `${customer.weight_goal} lbs` : 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Weight Goal Pace</Label>
+                    <p className="text-lg capitalize">
+                      {customer.weight_goal_pace || 'Not set'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dietary Information */}
+              <Card className="p-6">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="h-5 w-5" />
+                    Dietary Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 space-y-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Dietary Preferences</Label>
+                    <p className="text-lg">
+                      {customer.dietary_preferences?.length > 0 
+                        ? customer.dietary_preferences.join(', ') 
+                        : 'None'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Food Preferences</Label>
+                    <p className="text-lg">
+                      {customer.food_preferences?.length > 0 
+                        ? customer.food_preferences.join(', ') 
+                        : 'None'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Allergens</Label>
+                    <p className="text-lg">
+                      {customer.allergens?.length > 0 
+                        ? customer.allergens.join(', ') 
+                        : 'None'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Budget Information */}
+              <Card className="p-6">
+                <CardHeader className="px-0 pt-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Budget Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 space-y-4">
                   <div>
                     <Label className="text-sm text-muted-foreground">Drinks Budget</Label>
                     <p className="text-lg font-medium">
@@ -128,9 +190,10 @@ export default async function CustomerPage({ params }: PageProps) {
                       ${customer.snacks_budget?.toFixed(2) || '0.00'}
                     </p>
                   </div>
-                </div>
+                </CardContent>
               </Card>
 
+              {/* Meal Plan */}
               <Card className="md:col-span-2">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -143,10 +206,11 @@ export default async function CustomerPage({ params }: PageProps) {
                 </CardContent>
               </Card>
 
+              {/* Order History */}
               <Card className="md:col-span-2">
-                <div className="mb-4 p-6 pb-0">
-                  <h2 className="text-lg font-semibold">Order History</h2>
-                </div>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Order History</CardTitle>
+                </CardHeader>
                 <CustomerOrdersTable orders={customer.orders || []} />
               </Card>
             </div>

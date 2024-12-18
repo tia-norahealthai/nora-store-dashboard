@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from 'date-fns'
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface Order {
   id: string
@@ -25,6 +25,8 @@ interface Order {
 }
 
 export function OrdersTable({ orders }: { orders: Order[] }) {
+  const router = useRouter()
+
   return (
     <Table>
       <TableHeader>
@@ -38,11 +40,13 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
       </TableHeader>
       <TableBody>
         {orders.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell>
-              <Link href={`/orders/${order.id}`} className="hover:underline">
-                {order.id.slice(0, 8)}
-              </Link>
+          <TableRow 
+            key={order.id}
+            className="cursor-pointer hover:bg-muted/50"
+            onClick={() => router.push(`/orders/${order.id}`)}
+          >
+            <TableCell className="font-medium">
+              {order.id.slice(0, 8)}
             </TableCell>
             <TableCell>
               <div>

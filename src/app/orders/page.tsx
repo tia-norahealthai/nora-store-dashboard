@@ -19,6 +19,7 @@ import {
 import { OrdersTable } from "@/components/orders-table"
 import { OrderCard } from "@/components/order-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAuth } from '@/components/providers/supabase-auth-provider'
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
 
@@ -42,15 +43,45 @@ export default function OrdersPage() {
     cancelled: 0
   })
   const supabase = createClientComponentClient()
+  const { user } = useAuth()
 
   useEffect(() => {
     const fetchOrders = async () => {
+      if (!user) return
+
+      // First, get the user's restaurants
+      const { data: userRestaurants, error: restaurantsError } = await supabase
+        .from('restaurant_users')
+        .select('restaurant_id')
+        .eq('user_id', user.id)
+
+      if (restaurantsError) {
+        console.error('Error fetching user restaurants:', restaurantsError)
+        return
+      }
+
+      const restaurantIds = userRestaurants.map(r => r.restaurant_id)
+
+      // If user has no restaurants, return empty array
+      if (restaurantIds.length === 0) {
+        setOrders([])
+        setMetrics({
+          total: 0,
+          pending: 0,
+          processing: 0,
+          completed: 0,
+          cancelled: 0
+        })
+        return
+      }
+
       let query = supabase
         .from('orders')
         .select(`
           *,
           customer:customers(*)
         `)
+        .in('restaurant_id', restaurantIds)
       
       if (status !== 'all') {
         query = query.eq('status', status)
@@ -73,7 +104,7 @@ export default function OrdersPage() {
     }
 
     fetchOrders()
-  }, [status])
+  }, [status, user])
 
   return (
     <SidebarProvider>
