@@ -15,10 +15,14 @@ import { Label } from "@/components/ui/label";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface AddMenuItemFormProps {
   restaurantId: string | null
 }
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const TIMES = ['morning', 'afternoon', 'evening']
 
 export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,42 +53,38 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
     fetchRestaurants();
   }, [restaurantId, supabase]);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsLoading(true);
-
-    const formData = new FormData(event.currentTarget);
-    const newItem = {
-      restaurant_id: selectedRestaurant,
-      name: formData.get('name'),
-      description: formData.get('description'),
-      price: parseFloat(formData.get('price') as string),
-      category: formData.get('category'),
-      image_url: formData.get('image_url'),
-      status: 'active',
-      type: formData.get('type'),
-      cuisine_type: formData.get('cuisine_type'),
-      dietary: (formData.get('dietary') as string)?.split(',').map(d => d.trim()) || [],
-      allergens: (formData.get('allergens') as string)?.split(',').map(a => a.trim()) || [],
-      ingredients: (formData.get('ingredients') as string)?.split(',').map(i => i.trim()) || [],
-      preparation_time: parseInt(formData.get('preparation_time') as string),
-      calories: parseInt(formData.get('calories') as string) || null,
-      protein: parseFloat(formData.get('protein') as string) || null,
-      carbohydrates: parseFloat(formData.get('carbohydrates') as string) || null,
-      fat: parseFloat(formData.get('fat') as string) || null,
-      fiber: parseFloat(formData.get('fiber') as string) || null,
-      added_sugars: parseFloat(formData.get('added_sugars') as string) || null,
-      processed_food: formData.get('processed_food') === 'true',
-      dressing: formData.get('dressing') || null,
-      food_benefits: (formData.get('food_benefits') as string)?.split(',').map(b => b.trim()) || [],
-      healthy_score: parseInt(formData.get('healthy_score') as string) || null,
-      availability: formData.get('availability') as string || 'available'
-    };
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsLoading(true)
 
     try {
+      const formData = new FormData(event.currentTarget)
+      
+      // Get selected days and times
+      const available_days = DAYS.filter(day => 
+        formData.get(`day-${day}`) === 'on'
+      )
+      
+      const available_times = TIMES.filter(time => 
+        formData.get(`time-${time}`) === 'on'
+      )
+
+      const menuItemData = {
+        name: formData.get('name') as string,
+        price: parseFloat(formData.get('price') as string),
+        category: formData.get('category') as string,
+        description: formData.get('description') as string,
+        restaurant_id: restaurantId || selectedRestaurant,
+        preparation_time: parseInt(formData.get('preparation_time') as string),
+        image_url: formData.get('image_url') as string,
+        availability: formData.get('availability') as string,
+        available_days,
+        available_times,
+      }
+
       const { error } = await supabase
         .from('menu_items')
-        .insert([newItem]);
+        .insert([menuItemData]);
 
       if (error) throw error;
 
@@ -242,6 +242,51 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                 <SelectItem value="seasonal">Seasonal</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label>Available Days</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {DAYS.map((day) => (
+                  <div key={day} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`day-${day}`}
+                      name="available_days"
+                      value={day}
+                      defaultChecked
+                    />
+                    <Label 
+                      htmlFor={`day-${day}`}
+                      className="capitalize"
+                    >
+                      {day}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Available Times</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {TIMES.map((time) => (
+                  <div key={time} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`time-${time}`}
+                      name="available_times"
+                      value={time}
+                      defaultChecked
+                    />
+                    <Label 
+                      htmlFor={`time-${time}`}
+                      className="capitalize"
+                    >
+                      {time}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <Button type="submit" disabled={isLoading}>
             {isLoading ? 'Adding...' : 'Add Item'}

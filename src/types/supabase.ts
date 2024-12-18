@@ -39,6 +39,8 @@ export interface Database {
           price: number
           description?: string
           category?: string
+          available_days: string[]
+          available_times: string[]
         }
       }
       meal_plans: {

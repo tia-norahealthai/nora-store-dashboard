@@ -27,6 +27,8 @@ interface MenuItem {
   type: 'Meal' | 'Snack' | 'Drink'
   image_url?: string
   price: number
+  available_days: string[]
+  available_times: string[]
 }
 
 interface CustomerBudget {
@@ -92,7 +94,7 @@ export function MealPlanSchedule({
         // Fetch menu items
         const { data: menuData, error: menuError } = await supabase
           .from('menu_items')
-          .select('id, name, description, price, type, allergens, image_url, category')
+          .select('id, name, description, price, type, allergens, image_url, category, available_days, available_times')
 
         if (menuError) throw menuError
         setMenuItems(menuData || [])
@@ -516,6 +518,17 @@ export function MealPlanSchedule({
       }, 0)
   }
 
+  const getAvailableMenuItems = (
+    allItems: MenuItem[], 
+    day: string, 
+    time: string
+  ) => {
+    return allItems.filter(item => 
+      item.available_days.includes(day.toLowerCase()) &&
+      item.available_times.includes(time.toLowerCase())
+    )
+  }
+
   // Only show the UI if it's not a new plan being auto-generated
   if (isNewPlan && isLoading) {
     return (
@@ -636,13 +649,12 @@ export function MealPlanSchedule({
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {menuItemsByCategory[itemType]?.map(item => {
-                            const hasConflict = hasAllergenConflict(item)
-                            return (
+                          {getAvailableMenuItems(menuItemsByCategory[itemType], selectedDay, time)
+                            .map(item => (
                               <SelectItem 
                                 key={item.id} 
                                 value={item.id}
-                                disabled={hasConflict}
+                                disabled={hasAllergenConflict(item)}
                                 className={cn(
                                   "flex items-center gap-2",
                                   hasConflict && "text-destructive relative pl-8"
@@ -667,8 +679,7 @@ export function MealPlanSchedule({
                                   </span>
                                 </div>
                               </SelectItem>
-                            )
-                          })}
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>

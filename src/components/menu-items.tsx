@@ -71,6 +71,35 @@ const getValidImageUrl = (url?: string) => {
   }
 }
 
+function MenuItemAvailability({ days, times }: { days: string[], times: string[] }) {
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex flex-wrap gap-1">
+        {days.map(day => (
+          <Badge 
+            key={day} 
+            variant="outline" 
+            className="text-xs capitalize"
+          >
+            {day.slice(0, 3)}
+          </Badge>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {times.map(time => (
+          <Badge 
+            key={time} 
+            variant="secondary" 
+            className="text-xs capitalize"
+          >
+            {time}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function MenuItems({ initialItems }: MenuItemsProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialItems)
   const [searchQuery, setSearchQuery] = useState("")
@@ -186,6 +215,10 @@ export function MenuItems({ initialItems }: MenuItemsProps) {
                   {item.category}
                 </Badge>
               )}
+              <MenuItemAvailability 
+                days={item.available_days} 
+                times={item.available_times}
+              />
             </div>
           </Link>
         ))}
