@@ -16,6 +16,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Progress } from "@/components/ui/progress"
 
 interface AddMenuItemFormProps {
   restaurantId: string | undefined
@@ -27,9 +28,19 @@ const DIETARY_OPTIONS = ['vegetarian', 'vegan', 'gluten-free']
 const ALLERGENS = ['dairy', 'nuts', 'eggs', 'soy', 'wheat', 'fish', 'shellfish']
 const MEAL_TYPES = ['Meal', 'Snack', 'Drink']
 
+const TOTAL_STEPS = 5;
+const STEP_TITLES = [
+  'Basic Information',
+  'Availability',
+  'Dietary Information',
+  'Nutritional Information',
+  'Health Information'
+];
+
 export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<string>(restaurantId || '');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -180,42 +191,45 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
     }
   }
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Add Menu Item</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add New Menu Item</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          {!restaurantId && (
-            <div className="grid gap-2">
-              <Label htmlFor="restaurant">Restaurant *</Label>
-              <Select
-                value={selectedRestaurant}
-                onValueChange={setSelectedRestaurant}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a restaurant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {restaurants.map((restaurant) => (
-                    <SelectItem key={restaurant.id} value={restaurant.id}>
-                      {restaurant.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+  const handleNext = () => {
+    if (currentStep < TOTAL_STEPS) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
 
-          {/* Basic Information */}
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Basic Information</h3>
-            
+            {!restaurantId && (
+              <div className="grid gap-2">
+                <Label htmlFor="restaurant">Restaurant *</Label>
+                <Select
+                  value={selectedRestaurant}
+                  onValueChange={setSelectedRestaurant}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a restaurant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {restaurants.map((restaurant) => (
+                      <SelectItem key={restaurant.id} value={restaurant.id}>
+                        {restaurant.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid gap-2">
               <Label htmlFor="name">Name *</Label>
               <Input id="name" name="name" required />
@@ -267,11 +281,11 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
               <Input id="image_url" name="image_url" type="url" />
             </div>
           </div>
+        );
 
-          {/* Availability */}
+      case 2:
+        return (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Availability</h3>
-            
             <div className="grid gap-2">
               <Label>Available Days</Label>
               <div className="flex flex-wrap gap-2">
@@ -296,11 +310,11 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
               </div>
             </div>
           </div>
+        );
 
-          {/* Dietary Information */}
+      case 3:
+        return (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Dietary Information</h3>
-            
             <div className="grid gap-2">
               <Label>Dietary Options</Label>
               <div className="flex flex-wrap gap-2">
@@ -330,11 +344,11 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
               <Textarea id="ingredients" name="ingredients" placeholder="Enter ingredients separated by commas" />
             </div>
           </div>
+        );
 
-          {/* Nutritional Information */}
+      case 4:
+        return (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Nutritional Information</h3>
-            
             <div className="grid gap-4 grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="calories">Calories</Label>
@@ -367,11 +381,11 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
               </div>
             </div>
           </div>
+        );
 
-          {/* Health Information */}
+      case 5:
+        return (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Health Information</h3>
-            
             <div className="grid gap-2">
               <div className="flex items-center space-x-2">
                 <Checkbox id="processed_food" name="processed_food" />
@@ -389,12 +403,53 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
               <Input id="healthy_score" name="healthy_score" type="number" min="0" max="100" />
             </div>
           </div>
+        );
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Adding...' : 'Add Menu Item'}
-          </Button>
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button>Add Menu Item</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Menu Item - {STEP_TITLES[currentStep - 1]}</DialogTitle>
+        </DialogHeader>
+        <div className="mb-6">
+          <Progress value={(currentStep / TOTAL_STEPS) * 100} className="h-2" />
+          <div className="flex justify-between text-sm text-muted-foreground mt-2">
+            <span>Step {currentStep} of {TOTAL_STEPS}</span>
+            <span>{STEP_TITLES[currentStep - 1]}</span>
+          </div>
+        </div>
+        <form onSubmit={onSubmit} className="space-y-4">
+          {renderStepContent()}
+          
+          <div className="flex justify-between mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+            >
+              Previous
+            </Button>
+            {currentStep < TOTAL_STEPS ? (
+              <Button type="button" onClick={handleNext}>
+                Next
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Adding...' : 'Add Menu Item'}
+              </Button>
+            )}
+          </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 } 
