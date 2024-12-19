@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Lock, Mail, User, Store, MapPin, Percent, Loader2 } from 'lucide-react'
+import { Lock, Mail, User, Store, MapPin, Percent, Loader2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Logo } from '@/components/ui/logo'
@@ -27,45 +27,31 @@ interface SignupFormData {
   full_name: string
   restaurant_name: string
   restaurant_address: string
-  cashback_percentage: number
 }
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [fullName, setFullName] = useState('')
   const [restaurantName, setRestaurantName] = useState('')
   const [restaurantAddress, setRestaurantAddress] = useState('')
-  const [cashbackPercentage, setCashbackPercentage] = useState('20')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
-
-  // Generate cashback options from 20 to 50
-  const cashbackOptions = Array.from(
-    { length: 31 }, 
-    (_, i) => (20 + i).toString()
-  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Validate cashback percentage
-      const cashback = parseInt(cashbackPercentage)
-      if (isNaN(cashback) || cashback < 20 || cashback > 50) {
-        throw new Error('Cashback must be between 20% and 50%')
-      }
-
       // Create the form data object
       const formData: SignupFormData = {
         email,
         password,
         full_name: fullName,
         restaurant_name: restaurantName,
-        restaurant_address: restaurantAddress,
-        cashback_percentage: cashback
+        restaurant_address: restaurantAddress
       }
 
       const response = await fetch('/api/auth/signup', {
@@ -146,13 +132,26 @@ export default function SignUpPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-9"
                     required
                     minLength={8}
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground opacity-70" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground opacity-70" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
@@ -188,33 +187,6 @@ export default function SignUpPage() {
                         required
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cashback">Cashback Percentage</Label>
-                    <Select
-                      value={cashbackPercentage}
-                      onValueChange={setCashbackPercentage}
-                    >
-                      <SelectTrigger className="w-full">
-                        <div className="flex items-center">
-                          <Percent className="mr-2 h-4 w-4 text-muted-foreground opacity-70" />
-                          <SelectValue placeholder="Select cashback percentage" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cashbackOptions.map((percentage) => (
-                          <SelectItem 
-                            key={percentage} 
-                            value={percentage}
-                          >
-                            {percentage}%
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Choose a cashback percentage between 20% and 50%
-                    </p>
                   </div>
                 </div>
               </div>

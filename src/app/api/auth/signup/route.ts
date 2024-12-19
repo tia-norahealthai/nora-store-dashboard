@@ -9,7 +9,6 @@ interface SignupRequest {
   full_name: string
   restaurant_name: string
   restaurant_address: string
-  cashback_percentage: number
 }
 
 export async function POST(request: Request) {
@@ -20,22 +19,13 @@ export async function POST(request: Request) {
       password, 
       full_name,
       restaurant_name, 
-      restaurant_address, 
-      cashback_percentage 
+      restaurant_address
     } = body as SignupRequest
     
     // Validate required fields
-    if (!email || !password || !restaurant_name || !restaurant_address || !cashback_percentage) {
+    if (!email || !password || !restaurant_name || !restaurant_address) {
       return NextResponse.json(
         { error: 'All fields are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate cashback percentage
-    if (cashback_percentage < 20 || cashback_percentage > 50) {
-      return NextResponse.json(
-        { error: 'Cashback percentage must be between 20% and 50%' },
         { status: 400 }
       )
     }
@@ -87,7 +77,6 @@ export async function POST(request: Request) {
       .insert([{
         name: restaurant_name,
         address: restaurant_address,
-        cashback_percentage,
         created_by: userData.user.id
       }])
 
