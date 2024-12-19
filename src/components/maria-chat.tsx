@@ -31,20 +31,20 @@ export function MariaChat() {
 
     setIsLoading(true)
 
-    // Remove welcome message if it's still there
-    setMessages(prev => prev.filter(msg => msg.id !== 'welcome'))
-    
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      role: "user",
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, newMessage])
-    setInput("")
-
     try {
+      // Remove welcome message if it's still there
+      setMessages(prev => prev.filter(msg => msg.id !== 'welcome'))
+      
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        content,
+        role: "user",
+        timestamp: new Date()
+      }
+
+      setMessages(prev => [...prev, newMessage])
+      setInput("")
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,27 +57,57 @@ export function MariaChat() {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
 
-      if (data.error) {
-        throw new Error(data.error)
+      // Format response based on data type if available
+      let formattedResponse = data.content || "I apologize, but I couldn't process that request properly."
+      if (data.data) {
+        if (data.data.menuItems) {
+          formattedResponse += '\n\nMenu Items by Category:'
+          const itemsByCategory = data.data.menuItems.reduce((acc: any, item: any) => {
+            acc[item.category] = acc[item.category] || []
+            acc[item.category].push(item.name)
+            return acc
+          }, {})
+          Object.entries(itemsByCategory).forEach(([category, items]) => {
+            formattedResponse += `\n${category}: ${(items as string[]).join(', ')}`
+          })
+        }
+        
+        if (data.data.pendingOrders) {
+          formattedResponse += '\n\nPending Orders:'
+          data.data.pendingOrders.forEach((order: any) => {
+            formattedResponse += `\nOrder #${order.id} - $${order.total_amount}`
+          })
+        }
       }
 
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
-        content: data.content,
+        content: formattedResponse,
         role: "assistant",
         timestamp: new Date()
       }])
 
     } catch (error) {
-      console.error('Chat error:', error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message"
+      
+      // Add error message to chat
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        content: `I apologize, but I encountered an error: ${errorMessage}. Please try again or rephrase your question.`,
+        role: "assistant",
+        timestamp: new Date()
+      }])
+
+      // Show toast notification
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {

@@ -28,6 +28,7 @@ interface OrderMetrics {
   completed: number
   cancelled: number
   totalRevenue: number
+  averageOrder: number
 }
 
 export default function OrdersPage() {
@@ -39,7 +40,8 @@ export default function OrdersPage() {
     processing: 0,
     completed: 0,
     cancelled: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    averageOrder: 0
   })
   const supabase = createClientComponentClient()
   const { user } = useAuth()
@@ -86,7 +88,8 @@ export default function OrdersPage() {
             processing: 0,
             completed: 0,
             cancelled: 0,
-            totalRevenue: 0
+            totalRevenue: 0,
+            averageOrder: 0
           })
           return
         }
@@ -113,7 +116,8 @@ export default function OrdersPage() {
           processing: data.filter(order => order.status === 'processing').length,
           completed: data.filter(order => order.status === 'completed').length,
           cancelled: data.filter(order => order.status === 'cancelled').length,
-          totalRevenue
+          totalRevenue,
+          averageOrder: data.length > 0 ? totalRevenue / data.length : 0
         }
         setMetrics(newMetrics)
       }
@@ -189,6 +193,15 @@ export default function OrdersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">${metrics.totalRevenue.toFixed(2)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Order</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${metrics.averageOrder.toFixed(2)}</div>
               </CardContent>
             </Card>
           </div>
