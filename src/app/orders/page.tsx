@@ -6,7 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Package, Clock, CheckCircle, XCircle } from "lucide-react"
+import { Package, Clock, CheckCircle, XCircle, DollarSign } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,6 +27,7 @@ interface OrderMetrics {
   processing: number
   completed: number
   cancelled: number
+  totalRevenue: number
 }
 
 export default function OrdersPage() {
@@ -37,7 +38,8 @@ export default function OrdersPage() {
     pending: 0,
     processing: 0,
     completed: 0,
-    cancelled: 0
+    cancelled: 0,
+    totalRevenue: 0
   })
   const supabase = createClientComponentClient()
   const { user } = useAuth()
@@ -83,7 +85,8 @@ export default function OrdersPage() {
             pending: 0,
             processing: 0,
             completed: 0,
-            cancelled: 0
+            cancelled: 0,
+            totalRevenue: 0
           })
           return
         }
@@ -100,12 +103,17 @@ export default function OrdersPage() {
       if (!error && data) {
         setOrders(data)
         // Calculate metrics
+        const totalRevenue = data.reduce((sum, order) => {
+          return sum + (order.total_amount || 0)
+        }, 0)
+        
         const newMetrics = {
           total: data.length,
           pending: data.filter(order => order.status === 'pending').length,
           processing: data.filter(order => order.status === 'processing').length,
           completed: data.filter(order => order.status === 'completed').length,
-          cancelled: data.filter(order => order.status === 'cancelled').length
+          cancelled: data.filter(order => order.status === 'cancelled').length,
+          totalRevenue
         }
         setMetrics(newMetrics)
       }
@@ -172,6 +180,15 @@ export default function OrdersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{metrics.cancelled}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${metrics.totalRevenue.toFixed(2)}</div>
               </CardContent>
             </Card>
           </div>
