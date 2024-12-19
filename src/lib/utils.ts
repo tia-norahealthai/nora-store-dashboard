@@ -13,10 +13,11 @@ export function formatDate(date: string | Date) {
   })
 }
 
-export const formatCurrency = (amount: number) => {
+export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 

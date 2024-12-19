@@ -18,6 +18,7 @@ import {
 import { OrdersTable } from "@/components/orders-table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from '@/components/providers/supabase-auth-provider'
+import { formatCurrency } from '@/lib/utils'
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled'
 
