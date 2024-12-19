@@ -19,12 +19,12 @@ import { ChatSidebar } from "@/components/chat-sidebar"
 import { TrendingUp, ShoppingBag, Users, ArrowUpRight } from "lucide-react"
 import { RecommendedAction } from "@/components/recommended-action"
 import { Suspense } from "react"
-import { MariaProvider } from "@/contexts/maria-context"
+import { VittoriaProvider } from "@/contexts/vittoria-context"
 import { GrowthPotentialCard } from "@/components/growth-potential-card"
 
 function RecommendedActions() {
   return (
-    <MariaProvider pageType="opportunities" initialData={null}>
+    <VittoriaProvider pageType="opportunities" initialData={null}>
       <div className="space-y-2">
         {/* <p className="text-lg font-semibold">Recommended Actions</p> */}
         <ul className="space-y-4 text-base">
@@ -54,7 +54,7 @@ function RecommendedActions() {
           </li>
         </ul>
       </div>
-    </MariaProvider>
+    </VittoriaProvider>
   )
 }
 

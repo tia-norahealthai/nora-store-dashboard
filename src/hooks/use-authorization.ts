@@ -9,8 +9,8 @@ const DEFAULT_PATHS = [
   '/orders',
   '/menu',
   '/opportunities',
-  '/maria',
-  '/maria/history',
+  '/vittoria',
+  '/vittoria/history',
   '/settings'
 ]
 
@@ -58,8 +58,8 @@ export function useAuthorization() {
               '/menu',
               '/opportunities',
               '/invoices',
-              '/maria',
-              '/maria/history',
+              '/vittoria',
+              '/vittoria/history',
               '/settings'
             ])
           } else {

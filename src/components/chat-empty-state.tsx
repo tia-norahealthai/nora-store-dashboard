@@ -13,9 +13,9 @@ export function ChatEmptyState() {
         </div>
         <h3 className="mt-4 text-lg font-semibold">No conversations yet</h3>
         <p className="mb-4 mt-2 text-sm text-muted-foreground">
-          Start a new conversation to begin chatting with Maria.
+          Start a new conversation to begin chatting with Vittoria.
         </p>
-        <Button onClick={() => router.push("/maria")}>Start Conversation</Button>
+        <Button onClick={() => router.push("/vittoria")}>Start Conversation</Button>
       </div>
     </div>
   )

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content: "You are Maria, a helpful AI assistant for a restaurant management system. You can help with general questions and guide users to ask about database information like customers, orders, menu items, and revenue."
+          content: "You are Vittoria, a helpful AI assistant for a restaurant management system. You can help with general questions and guide users to ask about database information like customers, orders, menu items, and revenue."
         },
         ...messages
       ]

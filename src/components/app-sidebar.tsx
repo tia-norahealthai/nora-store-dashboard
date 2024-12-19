@@ -13,6 +13,7 @@ import {
   Users,
   Store,
 } from "lucide-react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -86,13 +87,18 @@ const data = {
       title: "AI Assistant",
       items: [
         {
-          title: "Chat with MarIA",
-          url: "/maria",
-          icon: Bot,
+          title: "Chat with Vittoria",
+          url: "/vittoria",
+          icon: (props) => (
+            <Avatar className="h-4 w-4">
+              <AvatarImage src="/vittoria-avatar.png" alt="Vittoria" />
+              <AvatarFallback>VA</AvatarFallback>
+            </Avatar>
+          ),
         },
         {
           title: "Chat History",
-          url: "/maria/history",
+          url: "/vittoria/history",
           icon: MessageSquare,
         },
       ]

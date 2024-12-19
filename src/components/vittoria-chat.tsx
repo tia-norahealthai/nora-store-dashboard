@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Avatar } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Bot, Send, User } from "lucide-react"
@@ -15,10 +15,10 @@ type Message = {
   timestamp: Date
 }
 
-export function MariaChat() {
+export function VittoriaChat() {
   const [messages, setMessages] = useState<Message[]>([{
     id: 'welcome',
-    content: "👋 Hi! I'm Maria, your AI assistant. How can I help you today?",
+    content: "👋 Hi! I'm Vittoria, your AI assistant. How can I help you today?",
     role: "assistant",
     timestamp: new Date()
   }])
@@ -149,12 +149,12 @@ export function MariaChat() {
       }
     }
 
-    window.addEventListener('maria-typing-start', handleTypingStart)
-    window.addEventListener('maria-send-message', handleSendMessage as EventListener)
+    window.addEventListener('vittoria-typing-start', handleTypingStart)
+    window.addEventListener('vittoria-send-message', handleSendMessage as EventListener)
 
     return () => {
-      window.removeEventListener('maria-typing-start', handleTypingStart)
-      window.removeEventListener('maria-send-message', handleSendMessage as EventListener)
+      window.removeEventListener('vittoria-typing-start', handleTypingStart)
+      window.removeEventListener('vittoria-send-message', handleSendMessage as EventListener)
     }
   }, [])
 
@@ -176,7 +176,8 @@ export function MariaChat() {
             >
               {message.role === "assistant" ? (
                 <Avatar className="h-8 w-8">
-                  <Bot className="h-5 w-5 text-primary" />
+                  <AvatarImage src="/vittoria-avatar.png" alt="Vittoria" />
+                  <AvatarFallback>VA</AvatarFallback>
                 </Avatar>
               ) : (
                 <Avatar className="h-8 w-8 bg-primary">
@@ -197,7 +198,8 @@ export function MariaChat() {
           {isLoading && (
             <div className="flex gap-3">
               <Avatar className="h-8 w-8">
-                <Bot className="h-5 w-5 text-primary" />
+                <AvatarImage src="/vittoria-avatar.png" alt="Vittoria" />
+                <AvatarFallback>VA</AvatarFallback>
               </Avatar>
               <div className="rounded-lg px-4 py-2 bg-muted">
                 <TypingIndicator />

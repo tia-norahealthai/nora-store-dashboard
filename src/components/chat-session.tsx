@@ -71,8 +71,8 @@ export function ChatSession({ sessionId }: { sessionId: string }) {
           >
             {message.role === "assistant" && (
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/maria-avatar.png" />
-                <AvatarFallback>MA</AvatarFallback>
+                <AvatarImage src="/vittoria-avatar.png" alt="Vittoria" />
+                <AvatarFallback>VA</AvatarFallback>
               </Avatar>
             )}
             <Card className={`max-w-[80%] p-3 ${

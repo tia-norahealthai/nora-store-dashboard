@@ -26,11 +26,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { GrowthPotentialCard } from "@/components/growth-potential-card"
 import { RecommendedAction } from "@/components/recommended-action"
 import { Suspense } from "react"
-import { MariaProvider } from "@/contexts/maria-context"
+import { VittoriaProvider } from "@/contexts/vittoria-context"
 
 function RecommendedActions() {
   return (
-    <MariaProvider pageType="opportunities" initialData={null}>
+    <VittoriaProvider pageType="opportunities" initialData={null}>
       <div className="space-y-2">
         <ul className="space-y-4 text-base">
           <li>
@@ -59,7 +59,7 @@ function RecommendedActions() {
           </li>
         </ul>
       </div>
-    </MariaProvider>
+    </VittoriaProvider>
   )
 }
 

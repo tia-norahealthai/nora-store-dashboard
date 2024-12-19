@@ -56,7 +56,7 @@ export function ChatHistory() {
   )
 
   const handleViewChat = (sessionId: string) => {
-    router.push(`/maria/history/${sessionId}`)
+    router.push(`/vittoria/history/${sessionId}`)
   }
 
   if (sessions.length === 0) {

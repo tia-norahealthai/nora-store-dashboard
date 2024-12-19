@@ -13,9 +13,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { ChatSession } from "@/components/chat-session"
+import { ChatHistory } from "@/components/chat-history"
 
-export default function ChatSessionPage({ params }: { params: { id: string } }) {
+export default function ChatHistoryPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -31,22 +31,18 @@ export default function ChatSessionPage({ params }: { params: { id: string } }) 
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria">MarIA</BreadcrumbLink>
+                  <BreadcrumbLink href="/vittoria">Vittoria</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria/history">Chat History</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Session Details</BreadcrumbPage>
+                  <BreadcrumbPage>Chat History</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
-          <ChatSession sessionId={params.id} />
+          <ChatHistory />
         </div>
       </SidebarInset>
     </SidebarProvider>

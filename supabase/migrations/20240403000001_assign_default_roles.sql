@@ -69,8 +69,8 @@ VALUES
     ('business_owner', '/orders'),
     ('business_owner', '/menu'),
     ('business_owner', '/opportunities'),
-    ('business_owner', '/maria'),
-    ('business_owner', '/maria/history'),
+    ('business_owner', '/vittoria'),
+    ('business_owner', '/vittoria/history'),
     ('business_owner', '/settings')
 ON CONFLICT (role, resource) DO NOTHING;
 

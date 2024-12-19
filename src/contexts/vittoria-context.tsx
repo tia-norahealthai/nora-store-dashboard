@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useMenu } from "@/hooks/use-menu"
 import { actionResponses } from '@/lib/action-responses'
 
-interface MariaContextType {
+interface VittoriaContextType {
   menuItems: MenuItem[]
   customers: Customer[]
   orders: Order[]
@@ -19,7 +19,7 @@ interface MariaContextType {
   executeCommand: (command: string, data: any) => Promise<void>
 }
 
-const MariaContext = createContext<MariaContextType>({
+const VittoriaContext = createContext<VittoriaContextType>({
   menuItems: [],
   customers: [],
   orders: [],
@@ -30,7 +30,7 @@ const MariaContext = createContext<MariaContextType>({
   executeCommand: async () => {}
 })
 
-export function MariaProvider({ 
+export function VittoriaProvider({ 
   children, 
   pageType,
   initialData 
@@ -91,13 +91,13 @@ export function MariaProvider({
           break
 
         case 'openChat':
-          if (window.location.pathname === '/maria') {
-            window.dispatchEvent(new CustomEvent('maria-send-message', {
+          if (window.location.pathname === '/vittoria') {
+            window.dispatchEvent(new CustomEvent('vittoria-send-message', {
               detail: data.initialMessage
             }))
           } else {
             const query = encodeURIComponent(data.initialMessage)
-            window.location.href = `/maria?query=${query}`
+            window.location.href = `/vittoria?query=${query}`
           }
           break
 
@@ -105,7 +105,7 @@ export function MariaProvider({
           const actionKey = data.action.toLowerCase()
           const response = actionResponses[actionKey as keyof typeof actionResponses]
           if (response) {
-            window.dispatchEvent(new CustomEvent('maria-send-message', {
+            window.dispatchEvent(new CustomEvent('vittoria-send-message', {
               detail: {
                 query: data.query,
                 response: response.details
@@ -113,7 +113,7 @@ export function MariaProvider({
             }))
           } else {
             console.warn(`No response found for action: ${actionKey}`)
-            window.dispatchEvent(new CustomEvent('maria-send-message', {
+            window.dispatchEvent(new CustomEvent('vittoria-send-message', {
               detail: {
                 query: data.query,
                 response: "I'm sorry, I don't have specific guidance for that action yet. Please try asking me in a different way or contact support for assistance."
@@ -151,16 +151,16 @@ export function MariaProvider({
   }
 
   return (
-    <MariaContext.Provider value={value}>
+    <VittoriaContext.Provider value={value}>
       {children}
-    </MariaContext.Provider>
+    </VittoriaContext.Provider>
   )
 }
 
-export function useMariaContext() {
-  const context = useContext(MariaContext)
+export function useVittoriaContext() {
+  const context = useContext(VittoriaContext)
   if (context === undefined) {
-    throw new Error('useMariaContext must be used within a MariaProvider')
+    throw new Error('useVittoriaContext must be used within a VittoriaProvider')
   }
   return context
 } 

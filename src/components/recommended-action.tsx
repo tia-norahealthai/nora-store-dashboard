@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { MessageCircle } from "lucide-react"
-import { useMariaContext } from "@/contexts/maria-context"
+import { useVittoriaContext } from "@/contexts/vittoria-context"
 
 interface RecommendedActionProps {
   title: string
@@ -10,17 +10,17 @@ interface RecommendedActionProps {
 }
 
 export function RecommendedAction({ title, description }: RecommendedActionProps) {
-  const mariaContext = useMariaContext()
+  const vittoriaContext = useVittoriaContext()
   
-  const handleAskMaria = () => {
+  const handleAskVittoria = () => {
     const query = `Show me how to ${title.toLowerCase()}. Here's what I want to achieve: ${description}`
     
     // First dispatch typing start event
-    window.dispatchEvent(new CustomEvent('maria-typing-start'))
+    window.dispatchEvent(new CustomEvent('vittoria-typing-start'))
     
     // Then send the message after a small delay
     setTimeout(() => {
-      mariaContext.executeCommand('getActionResponse', { 
+      vittoriaContext.executeCommand('getActionResponse', { 
         action: title,
         query: query 
       })
@@ -37,7 +37,7 @@ export function RecommendedAction({ title, description }: RecommendedActionProps
         variant="default"
         size="default"
         className="flex items-center gap-2 text-white hover:text-blue-600"
-        onClick={handleAskMaria}
+        onClick={handleAskVittoria}
       >
         <MessageCircle className="h-4 w-4" />
         Get instructions

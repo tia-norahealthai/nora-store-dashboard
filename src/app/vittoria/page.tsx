@@ -13,9 +13,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { ChatHistory } from "@/components/chat-history"
+import { VittoriaChat } from "@/components/vittoria-chat"
+import { VittoriaProvider } from "@/contexts/vittoria-context"
 
-export default function ChatHistoryPage() {
+export default function VittoriaPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -27,22 +28,24 @@ export default function ChatHistoryPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/maria">MarIA</BreadcrumbLink>
+                  <BreadcrumbLink href="/vittoria">Vittoria</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chat History</BreadcrumbPage>
+                  <BreadcrumbPage>Chat</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
-          <ChatHistory />
+          <VittoriaProvider pageType="chat" initialData={null}>
+            <VittoriaChat />
+          </VittoriaProvider>
         </div>
       </SidebarInset>
     </SidebarProvider>

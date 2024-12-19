@@ -2,16 +2,16 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
-import { Bot } from "lucide-react"
-import { MariaChat } from "@/components/maria-chat"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { VittoriaChat } from "@/components/vittoria-chat"
 import { cn } from "@/lib/utils"
-import { MariaProvider } from "@/contexts/maria-context"
+import { VittoriaProvider } from "@/contexts/vittoria-context"
 import { PageType } from "@/types/data-types"
 
 export function ChatSidebar() {
   const pathname = usePathname()
   
-  if (pathname?.startsWith("/maria")) {
+  if (pathname?.startsWith("/vittoria")) {
     return null
   }
 
@@ -30,20 +30,23 @@ export function ChatSidebar() {
 
   return (
     <div className="hidden h-screen w-[400px] border-l bg-background md:block">
-      <MariaProvider pageType={getPageType()} initialData={null}>
+      <VittoriaProvider pageType={getPageType()} initialData={null}>
         <div className="flex h-full flex-col">
           <div className="flex h-16 shrink-0 items-center border-b px-6">
             <div className="flex items-center gap-3">
-              <Bot className="h-7 w-7" />
+              <Avatar className="h-7 w-7">
+                <AvatarImage src="/vittoria-avatar.png" alt="Vittoria" />
+                <AvatarFallback>VA</AvatarFallback>
+              </Avatar>
               <div className="flex flex-col gap-0.5">
-                <span className="text-base font-semibold">MarIA</span>
-                <span className="text-xs text-muted-foreground">Chat with Maria</span>
+                <span className="text-base font-semibold">Vittoria</span>
+                <span className="text-xs text-muted-foreground">Chat with Vittoria</span>
               </div>
             </div>
           </div>
-          <MariaChat />
+          <VittoriaChat />
         </div>
-      </MariaProvider>
+      </VittoriaProvider>
     </div>
   )
 } 
