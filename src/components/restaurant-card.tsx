@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Store, MapPin, Phone, Mail, Clock } from "lucide-react"
 import type { Database } from "@/lib/database.types"
+import { useRouter } from "next/navigation"
 
 type Restaurant = Database['public']['Tables']['restaurants']['Row']
 
@@ -12,8 +13,13 @@ interface RestaurantCardProps {
 }
 
 export function RestaurantCard({ restaurant }: RestaurantCardProps) {
+  const router = useRouter()
+
   return (
-    <Card className="overflow-hidden">
+    <Card 
+      className="overflow-hidden cursor-pointer transition-all hover:shadow-lg"
+      onClick={() => router.push(`/restaurants/${restaurant.id}`)}
+    >
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
