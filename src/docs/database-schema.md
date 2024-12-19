@@ -46,6 +46,38 @@ price decimal(10,2),
 created_at timestamp with time zone default now()
 )
 
+### Meal Plans Table
+- Stores user meal plan subscriptions
+- Links to users table
+
+**Schema:**
+sql
+meal_plans (
+id uuid primary key default uuid_generate_v4(),
+user_id uuid references users(id),
+status text,
+start_date date,
+end_date date,
+created_at timestamp with time zone default now(),
+updated_at timestamp with time zone default now()
+)
+
+
+### Meal Plan Items Table
+- Contains individual meals within each meal plan
+- Links to meal plans table
+
+**Schema:**
+sql
+meal_plan_items (
+id uuid primary key default uuid_generate_v4(),
+meal_plan_id uuid references meal_plans(id),
+meal_name text,
+scheduled_date date,
+meal_type text,
+created_at timestamp with time zone default now()
+)
+
 
 ## Relationships
 
@@ -59,10 +91,24 @@ created_at timestamp with time zone default now()
    - An order can have multiple order items
    - Foreign key: `order_items.order_id` references `orders.id`
 
+3. **Users → Meal Plans**
+   - One-to-Many relationship
+   - A user can have multiple meal plans
+   - Foreign key: `meal_plans.user_id` references `users.id`
+
+4. **Meal Plans → Meal Plan Items**
+   - One-to-Many relationship
+   - A meal plan can have multiple meal items
+   - Foreign key: `meal_plan_items.meal_plan_id` references `meal_plans.id`
+
+
 ## Indexes
 - `users.email` - Unique index for email lookups
 - `orders.user_id` - Index for faster order queries by user
 - `order_items.order_id` - Index for faster item lookups by order
+- `meal_plans.user_id` - Index for faster meal plan queries by user
+- `meal_plan_items.meal_plan_id` - Index for faster item lookups by meal plan
+- `meal_plan_items.scheduled_date` - Index for date-based queries
 
 ## Constraints
 1. Users
@@ -78,6 +124,16 @@ created_at timestamp with time zone default now()
    - Must have a valid order_id
    - Quantity must be positive
    - Price must be non-negative
+
+4. Meal Plans
+   - Must have a valid user_id
+   - End date must be after start date
+   - Status must be one of: 'active', 'paused', 'cancelled', 'completed'
+
+5. Meal Plan Items
+   - Must have a valid meal_plan_id
+   - Scheduled date must fall within meal plan date range
+   - Meal type must be one of: 'breakfast', 'lunch', 'dinner', 'snack'
 
 ## Database Functions and Triggers
 
@@ -103,6 +159,14 @@ created_at timestamp with time zone default now()
 3. Order Items
    - Users can only view items from their own orders
    - Order items can only be modified while order status is 'pending'
+
+4. Meal Plans
+   - Users can only view and modify their own meal plans
+   - Admins can view all meal plans
+
+5. Meal Plan Items
+   - Users can only view items from their own meal plans
+   - Items can only be modified while meal plan status is 'active'
 
 ## Backup and Recovery
 - Daily automated backups
@@ -147,6 +211,35 @@ LEFT JOIN order_items oi ON o.id = oi.order_id
 WHERE o.id = :order_id
 GROUP BY o.id;
 
+### Get User's Active Meal Plan with Items
+sql
+SELECT
+mp.,
+json_agg(mpi. ORDER BY mpi.scheduled_date) as meals
+FROM meal_plans mp
+LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+WHERE mp.user_id = :user_id
+AND mp.status = 'active'
+AND mp.start_date <= CURRENT_DATE
+AND mp.end_date >= CURRENT_DATE
+GROUP BY mp.id;
+
+### Get Weekly Meal Schedule
+sql
+SELECT
+mpi.scheduled_date,
+json_agg(
+json_build_object(
+'meal_type', mpi.meal_type,
+'meal_name', mpi.meal_name
+) ORDER BY mpi.meal_type
+) as daily_meals
+FROM meal_plan_items mpi
+JOIN meal_plans mp ON mp.id = mpi.meal_plan_id
+WHERE mp.user_id = :user_id
+AND mpi.scheduled_date BETWEEN :start_date AND :end_date
+GROUP BY mpi.scheduled_date
+ORDER BY mpi.scheduled_date;
 
 ## Maintenance Tasks
 1. Regular index maintenance
