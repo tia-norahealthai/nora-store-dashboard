@@ -72,13 +72,15 @@ export async function POST(request: Request) {
     )
 
     // Create restaurant using admin client
-    const { error: restaurantError } = await supabaseAdmin
+    const { data: restaurantData, error: restaurantError } = await supabaseAdmin
       .from('restaurants')
       .insert([{
         name: restaurant_name,
         address: restaurant_address,
         created_by: userData.user.id
       }])
+      .select()
+      .single()
 
     if (restaurantError) {
       console.error('Error creating restaurant:', restaurantError)
@@ -88,6 +90,31 @@ export async function POST(request: Request) {
       
       return NextResponse.json(
         { error: 'Failed to create restaurant' },
+        { status: 500 }
+      )
+    }
+
+    // Create restaurant_users association
+    const { error: associationError } = await supabaseAdmin
+      .from('restaurant_users')
+      .insert([{
+        user_id: userData.user.id,
+        restaurant_id: restaurantData.id,
+        role: 'business_owner'
+      }])
+
+    if (associationError) {
+      console.error('Error creating restaurant association:', associationError)
+      
+      // Clean up the restaurant and user if association fails
+      await supabaseAdmin
+        .from('restaurants')
+        .delete()
+        .eq('id', restaurantData.id)
+      await supabaseAdmin.auth.admin.deleteUser(userData.user.id)
+      
+      return NextResponse.json(
+        { error: 'Failed to create restaurant association' },
         { status: 500 }
       )
     }

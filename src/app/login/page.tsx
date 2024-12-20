@@ -43,7 +43,10 @@ export default function LoginPage() {
       })
 
       if (error) {
-        throw error
+        toast.error('Login failed', {
+          description: error.message || 'Please check your credentials and try again'
+        })
+        return
       }
 
       // Successful login
@@ -53,7 +56,7 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error)
       toast.error('Login failed', {
-        description: 'Please check your credentials and try again'
+        description: 'An unexpected error occurred. Please try again.'
       })
     } finally {
       setIsLoading(false)

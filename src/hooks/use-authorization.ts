@@ -63,20 +63,8 @@ export function useAuthorization() {
               '/settings'
             ])
           } else {
-            // Get business owner permissions
-            const { data: permissions, error: permError } = await supabase
-              .from('role_permissions')
-              .select('resource')
-              .eq('role', 'business_owner')
-
-            if (permError) {
-              console.error('Error fetching permissions:', permError)
-              throw new Error('Failed to fetch permissions')
-            }
-
-            if (permissions && isMounted) {
-              setAllowedPaths(permissions.map(p => p.resource))
-            }
+            // Business owner always has access to default paths
+            setAllowedPaths(DEFAULT_PATHS)
           }
         }
       } catch (error) {

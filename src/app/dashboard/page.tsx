@@ -36,116 +36,89 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { AddMenuItemForm } from "@/components/add-menu-item-form"
 import { redirect } from 'next/navigation'
+import DashboardClient from "@/components/dashboard-client"
 
-function RecommendedActions() {
-  return (
-    <VittoriaProvider pageType="opportunities" initialData={null}>
-      <div className="space-y-2">
-        <ul className="space-y-4 text-base">
-          <li>
-            <RecommendedAction
-              title="Set Up Smart Bundles"
-              description="Configure automated product bundles based on purchase history"
-            />
-          </li>
-          <li>
-            <RecommendedAction
-              title="Schedule Peak-Time Promotions"
-              description="Launch targeted promotions during your highest traffic hours"
-            />
-          </li>
-          <li>
-            <RecommendedAction
-              title="Upgrade Loyalty Rewards"
-              description="Design and launch new tier-based loyalty rewards program"
-            />
-          </li>
-          <li>
-            <RecommendedAction
-              title="Enable Smart Recommendations"
-              description="Activate AI-powered product suggestions for each customer"
-            />
-          </li>
-        </ul>
-      </div>
-    </VittoriaProvider>
-  )
+interface Restaurant {
+  id: string
+  cashback_percentage: number | null
+  address: string | null
+  phone: string | null
+}
+
+interface UserRestaurantData {
+  restaurant: Restaurant
+}
+
+interface UserRestaurant {
+  restaurant: Restaurant
+}
+
+interface DashboardMetrics {
+  revenue: number
+  activeUsers: number
+  conversionRate: number
+  pendingOrders: number
+  totalOrders: number
+  totalRevenue: number
+  averageOrder: number
+  averageCost: {
+    total: number
+    fixedFee: number
+    cashback: number
+  }
+  roas: {
+    value: number
+    marketingCosts: number
+    revenue: number
+  }
+  repeatCustomers: {
+    percentage: number
+    description: string
+  }
 }
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = createServerComponentClient({
+    cookies: () => cookies()
+  })
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  // Get the current user's session
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  if (!user) {
     redirect('/login')
   }
 
-  // First, get the user's restaurant through restaurant_users table
-  const { data: userRestaurant } = await supabase
+  // Get user's restaurant
+  const { data: userRestaurantData } = await supabase
     .from('restaurant_users')
     .select(`
       restaurant:restaurants (
         id,
-        cashback_percentage
+        cashback_percentage,
+        address,
+        phone
       )
     `)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .single()
 
-  // If no restaurant is found, show the create restaurant screen
-  if (!userRestaurant?.restaurant) {
-    return (
-      <BusinessOwnerWrapper>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
-            </header>
-            <div className="flex-1 overflow-auto">
-              <div className="flex flex-col gap-4 p-4 pt-0">
-                <Card className="border-dashed">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center justify-center space-y-6 text-center">
-                      <Store className="h-12 w-12 text-muted-foreground" />
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-semibold tracking-tight">Welcome to Nora!</h2>
-                        <p className="text-muted-foreground max-w-[600px]">
-                          To get started, you need to set up your restaurant profile.
-                        </p>
-                      </div>
-                      <div className="w-full max-w-[600px] space-y-4">
-                        <Link href="/restaurants" className="w-full">
-                          <Button className="w-full justify-between">
-                            <div className="flex items-center gap-2">
-                              <Store className="h-4 w-4" />
-                              <span>Create your restaurant profile</span>
-                            </div>
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </SidebarInset>
-          <ChatSidebar />
-        </SidebarProvider>
-      </BusinessOwnerWrapper>
-    )
+  if (!userRestaurantData?.restaurant) {
+    redirect('/onboarding')
+  }
+
+  // Ensure we have a single restaurant object, not an array
+  const restaurant = Array.isArray(userRestaurantData.restaurant) 
+    ? userRestaurantData.restaurant[0] 
+    : userRestaurantData.restaurant
+
+  const userRestaurant: UserRestaurant = {
+    restaurant: {
+      id: restaurant.id,
+      cashback_percentage: restaurant.cashback_percentage,
+      address: restaurant.address,
+      phone: restaurant.phone
+    }
   }
 
   // Now fetch menu items for the restaurant
@@ -154,82 +127,22 @@ export default async function DashboardPage() {
     .select('id')
     .eq('restaurant_id', userRestaurant.restaurant.id)
 
-  const hasMenuItems = menuItems && menuItems.length > 0
-  const hasCashbackSet = userRestaurant.restaurant.cashback_percentage !== null && userRestaurant.restaurant.cashback_percentage !== undefined
-
-  // If no menu items or cashback percentage, show empty state
-  if (!hasMenuItems || !hasCashbackSet) {
-    return (
-      <BusinessOwnerWrapper>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
-            </header>
-            <div className="flex-1 overflow-auto">
-              <div className="flex flex-col gap-4 p-4 pt-0">
-                <Card className="border-dashed">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center justify-center space-y-6 text-center">
-                      <Store className="h-12 w-12 text-muted-foreground" />
-                      <div className="space-y-2">
-                        <h2 className="text-2xl font-semibold tracking-tight">Set up your business</h2>
-                        <p className="text-muted-foreground max-w-[600px]">
-                          Complete these steps to start accepting orders
-                        </p>
-                      </div>
-                      <div className="w-full max-w-[600px] space-y-4">
-                        <Link href="/settings" className="w-full">
-                          <Button className="w-full justify-between">
-                            <div className="flex items-center gap-2">
-                              <Settings className="h-4 w-4" />
-                              <span>Set up cashback percentage</span>
-                            </div>
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Link href="/menu" className="w-full">
-                          <Button className="w-full justify-between">
-                            <div className="flex items-center gap-2">
-                              <ShoppingBag className="h-4 w-4" />
-                              <span>Add your first menu item</span>
-                            </div>
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </SidebarInset>
-          <ChatSidebar />
-        </SidebarProvider>
-      </BusinessOwnerWrapper>
-    )
-  }
+  const hasMenuItems = menuItems ? menuItems.length > 0 : false
+  const hasCashbackSet = Boolean(userRestaurant.restaurant.cashback_percentage !== null)
 
   // Mock data matching the image
-  const dashboardMetrics = {
+  const dashboardMetrics: DashboardMetrics = {
+    revenue: 1711.72,
+    activeUsers: 150,
+    conversionRate: 3.2,
+    pendingOrders: 5,
     totalOrders: 17,
     totalRevenue: 1711.72,
     averageOrder: 100.69,
     averageCost: {
       total: 40.28,
-      fixedFee: 10.07,  // 10%
-      cashback: 30.21   // 30%
+      fixedFee: 10.07,
+      cashback: 30.21
     },
     roas: {
       value: 2.50,
@@ -243,188 +156,8 @@ export default async function DashboardPage() {
   }
 
   return (
-    <BusinessOwnerWrapper>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="flex flex-col gap-4 p-4 pt-0">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Total Orders */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">Total Orders</CardTitle>
-                    <Receipt className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{dashboardMetrics.totalOrders}</div>
-                  </CardContent>
-                </Card>
-
-                {/* Total Revenue */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">Total Revenue</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${dashboardMetrics.totalRevenue.toFixed(2)}</div>
-                  </CardContent>
-                </Card>
-
-                {/* Average Order */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">Average Order</CardTitle>
-                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${dashboardMetrics.averageOrder.toFixed(2)}</div>
-                    <p className="text-xs text-muted-foreground">Per order value</p>
-                  </CardContent>
-                </Card>
-
-                {/* Average Cost */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">Average Cost</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">${dashboardMetrics.averageCost.total}</div>
-                    <div className="mt-2 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Fixed Fee (10%)</span>
-                        <span>${dashboardMetrics.averageCost.fixedFee}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Cashback (30%)</span>
-                        <span>${dashboardMetrics.averageCost.cashback}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* ROAS */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">ROAS</CardTitle>
-                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{dashboardMetrics.roas.value}</div>
-                    <p className="text-xs text-muted-foreground">Return on Ad Spend</p>
-                    <div className="mt-2 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Marketing Costs</span>
-                        <span>${dashboardMetrics.roas.marketingCosts}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Revenue</span>
-                        <span>${dashboardMetrics.roas.revenue}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Repeat Customers */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base font-normal text-muted-foreground">Repeat Customers</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{dashboardMetrics.repeatCustomers.percentage}%</div>
-                    <p className="text-xs text-muted-foreground">{dashboardMetrics.repeatCustomers.description}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Growth Potential and Customer Segments */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-                <GrowthPotentialCard
-                  potentialIncrease={24}
-                  orderValueIncrease={15}
-                  retentionIncrease={15}
-                  className="h-[240px]"
-                />
-                <Card className="h-[240px]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-2xl font-semibold">
-                      <Users className="h-4 w-4 text-blue-500" />
-                      Customer Segments
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm">High-Value Customers</p>
-                          <p className="text-sm font-medium">45%</p>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted">
-                          <div className="h-full w-[45%] rounded-full bg-blue-500" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm">Regular Customers</p>
-                          <p className="text-sm font-medium">35%</p>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted">
-                          <div className="h-full w-[35%] rounded-full bg-blue-400" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm">New Customers</p>
-                          <p className="text-sm font-medium">20%</p>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted">
-                          <div className="h-full w-[20%] rounded-full bg-blue-300" />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Recommended Actions */}
-              <div className="grid gap-4 md:grid-cols-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <ShoppingBag className="h-4 w-4" />
-                      Ways to improve your business
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Suspense fallback={<div>Loading recommendations...</div>}>
-                      <RecommendedActions />
-                    </Suspense>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
-        <ChatSidebar />
-        <DashboardMetricsData metrics={dashboardMetrics} />
-      </SidebarProvider>
-    </BusinessOwnerWrapper>
+    <DashboardClient 
+      user={user}
+    />
   )
 } 
