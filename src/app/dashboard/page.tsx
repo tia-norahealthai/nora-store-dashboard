@@ -17,7 +17,10 @@ import {
   ShoppingBag,
   Clock,
   Calculator,
-  Users
+  Users,
+  Store,
+  Settings,
+  ArrowRight
 } from "lucide-react"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { DashboardMetricsData } from '@/components/dashboard-metrics'
@@ -27,6 +30,12 @@ import { GrowthPotentialCard } from "@/components/growth-potential-card"
 import { RecommendedAction } from "@/components/recommended-action"
 import { Suspense } from "react"
 import { VittoriaProvider } from "@/contexts/vittoria-context"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { AddMenuItemForm } from "@/components/add-menu-item-form"
+import { redirect } from 'next/navigation'
 
 function RecommendedActions() {
   return (
@@ -63,7 +72,155 @@ function RecommendedActions() {
   )
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = createServerComponentClient({ cookies })
+
+  // Get the current user's session
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    redirect('/login')
+  }
+
+  // First, get the user's restaurant through restaurant_users table
+  const { data: userRestaurant } = await supabase
+    .from('restaurant_users')
+    .select(`
+      restaurant:restaurants (
+        id,
+        cashback_percentage
+      )
+    `)
+    .eq('user_id', session.user.id)
+    .single()
+
+  // If no restaurant is found, show the create restaurant screen
+  if (!userRestaurant?.restaurant) {
+    return (
+      <BusinessOwnerWrapper>
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 px-4">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
+            </header>
+            <div className="flex-1 overflow-auto">
+              <div className="flex flex-col gap-4 p-4 pt-0">
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center justify-center space-y-6 text-center">
+                      <Store className="h-12 w-12 text-muted-foreground" />
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-semibold tracking-tight">Welcome to Nora!</h2>
+                        <p className="text-muted-foreground max-w-[600px]">
+                          To get started, you need to set up your restaurant profile.
+                        </p>
+                      </div>
+                      <div className="w-full max-w-[600px] space-y-4">
+                        <Link href="/restaurants" className="w-full">
+                          <Button className="w-full justify-between">
+                            <div className="flex items-center gap-2">
+                              <Store className="h-4 w-4" />
+                              <span>Create your restaurant profile</span>
+                            </div>
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </SidebarInset>
+          <ChatSidebar />
+        </SidebarProvider>
+      </BusinessOwnerWrapper>
+    )
+  }
+
+  // Now fetch menu items for the restaurant
+  const { data: menuItems } = await supabase
+    .from('menu_items')
+    .select('id')
+    .eq('restaurant_id', userRestaurant.restaurant.id)
+
+  const hasMenuItems = menuItems && menuItems.length > 0
+  const hasCashbackSet = userRestaurant.restaurant.cashback_percentage !== null && userRestaurant.restaurant.cashback_percentage !== undefined
+
+  // If no menu items or cashback percentage, show empty state
+  if (!hasMenuItems || !hasCashbackSet) {
+    return (
+      <BusinessOwnerWrapper>
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 px-4">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
+            </header>
+            <div className="flex-1 overflow-auto">
+              <div className="flex flex-col gap-4 p-4 pt-0">
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center justify-center space-y-6 text-center">
+                      <Store className="h-12 w-12 text-muted-foreground" />
+                      <div className="space-y-2">
+                        <h2 className="text-2xl font-semibold tracking-tight">Set up your business</h2>
+                        <p className="text-muted-foreground max-w-[600px]">
+                          Complete these steps to start accepting orders
+                        </p>
+                      </div>
+                      <div className="w-full max-w-[600px] space-y-4">
+                        <Link href="/settings" className="w-full">
+                          <Button className="w-full justify-between">
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              <span>Set up cashback percentage</span>
+                            </div>
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href="/menu" className="w-full">
+                          <Button className="w-full justify-between">
+                            <div className="flex items-center gap-2">
+                              <ShoppingBag className="h-4 w-4" />
+                              <span>Add your first menu item</span>
+                            </div>
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </SidebarInset>
+          <ChatSidebar />
+        </SidebarProvider>
+      </BusinessOwnerWrapper>
+    )
+  }
+
   // Mock data matching the image
   const dashboardMetrics = {
     totalOrders: 17,

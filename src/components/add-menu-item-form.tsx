@@ -17,6 +17,8 @@ import type { Database } from '@/types/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
+import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
 
 interface AddMenuItemFormProps {
   restaurantId: string | undefined
@@ -37,14 +39,21 @@ const STEP_TITLES = [
   'Health Information'
 ];
 
+interface FormErrors {
+  [key: string]: boolean;
+}
+
 export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<string>(restaurantId || '');
+  const [selectedType, setSelectedType] = useState<string>(MEAL_TYPES[0]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const supabase = createClientComponentClient<Database>();
+  const { toast } = useToast();
 
   // Check if user is admin
   useEffect(() => {
@@ -117,6 +126,111 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
     loadRestaurants()
   }, [supabase, isAdmin])
 
+  const validateStep = (step: number, formData: FormData): boolean => {
+    const newErrors: FormErrors = {};
+    let isValid = true;
+
+    console.log('Validating step:', step);
+    console.log('Form data:', Object.fromEntries(formData.entries()));
+    console.log('Selected type:', selectedType);
+
+    switch (step) {
+      case 1:
+        // Basic Information validation
+        const name = formData.get('name')?.toString().trim();
+        const description = formData.get('description')?.toString().trim();
+        const price = formData.get('price')?.toString();
+        const category = formData.get('category')?.toString().trim();
+        const prepTime = formData.get('preparation_time')?.toString();
+
+        console.log('Validating fields:', {
+          name,
+          description,
+          price,
+          category,
+          selectedType,
+          prepTime
+        });
+
+        // Check each field and set specific errors
+        if (!name) {
+          newErrors.name = true;
+          isValid = false;
+        }
+        if (!description) {
+          newErrors.description = true;
+          isValid = false;
+        }
+        if (!price || parseFloat(price) <= 0) {
+          newErrors.price = true;
+          isValid = false;
+        }
+        if (!category) {
+          newErrors.category = true;
+          isValid = false;
+        }
+        if (!prepTime || parseInt(prepTime) <= 0) {
+          newErrors.preparation_time = true;
+          isValid = false;
+        }
+
+        break;
+
+      case 2:
+        // Availability validation - at least one day and time must be selected
+        const selectedDays = DAYS.filter(day => formData.get(`day-${day}`) === 'on');
+        const selectedTimes = TIMES.filter(time => formData.get(`time-${time}`) === 'on');
+        
+        if (selectedDays.length === 0) {
+          newErrors.days = true;
+          isValid = false;
+        }
+        if (selectedTimes.length === 0) {
+          newErrors.times = true;
+          isValid = false;
+        }
+        break;
+
+      // Add validation for other steps if needed
+    }
+
+    console.log('Validation result:', { isValid, errors: newErrors });
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleNext = () => {
+    console.log('Current step:', currentStep);
+    const form = document.querySelector('form');
+    if (!form) {
+      console.error('Form element not found');
+      return;
+    }
+
+    const formData = new FormData(form);
+    if (validateStep(currentStep, formData)) {
+      console.log('Validation passed, moving to next step');
+      if (currentStep < TOTAL_STEPS) {
+        setCurrentStep(currentStep + 1);
+        setErrors({});
+      }
+    } else {
+      console.log('Validation failed');
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      setErrors({});
+    }
+  };
+
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsLoading(true)
@@ -143,65 +257,85 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
       )
 
       // Get ingredients array
-      const ingredients = formData.get('ingredients')?.toString().split(',').map(i => i.trim()) || []
+      const ingredients = formData.get('ingredients')?.toString().split(',').map(i => i.trim()).filter(Boolean) || []
 
       // Get food benefits array
-      const food_benefits = formData.get('food_benefits')?.toString().split(',').map(b => b.trim()) || []
+      const food_benefits = formData.get('food_benefits')?.toString().split(',').map(b => b.trim()).filter(Boolean) || []
+
+      // Validate required fields
+      const name = formData.get('name')?.toString().trim()
+      const price = formData.get('price')?.toString()
+      const category = formData.get('category')?.toString().trim()
+      const type = formData.get('type')?.toString()
+
+      if (!name || !price || !category || !type || !restaurantId) {
+        throw new Error('Please fill in all required fields')
+      }
+
+      // Validate price is a valid number
+      const priceValue = parseFloat(price)
+      if (isNaN(priceValue) || priceValue <= 0) {
+        throw new Error('Please enter a valid price')
+      }
+
+      // Prepare nutritional info with proper null handling
+      const nutritionalInfo: Record<string, number | null> = {}
+      const nutritionalFields = ['calories', 'protein', 'carbohydrates', 'fat', 'fiber', 'added_sugars']
+      
+      nutritionalFields.forEach(field => {
+        const value = formData.get(field)?.toString()
+        const numValue = value ? parseFloat(value) : null
+        nutritionalInfo[field] = !isNaN(numValue as number) ? numValue : null
+      })
 
       const menuItemData = {
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        price: parseFloat(formData.get('price') as string),
-        category: formData.get('category') as string,
-        type: formData.get('type') as string,
-        restaurant_id: restaurantId || selectedRestaurant,
-        preparation_time: parseInt(formData.get('preparation_time') as string),
-        image_url: formData.get('image_url') as string,
-        status: 'active',
-        available_days,
-        available_times,
-        dietary,
-        allergens,
+        name,
+        description: formData.get('description')?.toString().trim() || null,
+        price: priceValue,
+        category,
+        type,
+        restaurant_id: restaurantId,
+        preparation_time: parseInt(formData.get('preparation_time')?.toString() || '0') || null,
+        image_url: formData.get('image_url')?.toString().trim() || null,
+        status: 'active' as const,
+        available_days: available_days.length > 0 ? available_days : DAYS,
+        available_times: available_times.length > 0 ? available_times : TIMES,
+        dietary: dietary.length > 0 ? dietary : [],
+        allergens: allergens.length > 0 ? allergens : [],
         ingredients,
-        cuisine_type: formData.get('cuisine_type') as string,
-        calories: parseInt(formData.get('calories') as string) || null,
-        protein: parseFloat(formData.get('protein') as string) || null,
-        carbohydrates: parseFloat(formData.get('carbohydrates') as string) || null,
-        fat: parseFloat(formData.get('fat') as string) || null,
-        fiber: parseFloat(formData.get('fiber') as string) || null,
-        added_sugars: parseFloat(formData.get('added_sugars') as string) || null,
+        cuisine_type: formData.get('cuisine_type')?.toString().trim() || null,
+        nutritional_info: nutritionalInfo,
         processed_food: formData.get('processed_food') === 'on',
         food_benefits,
-        healthy_score: parseInt(formData.get('healthy_score') as string) || null,
+        healthy_score: parseInt(formData.get('healthy_score')?.toString() || '0') || null,
       }
 
       const { error } = await supabase
         .from('menu_items')
-        .insert([menuItemData]);
+        .insert([menuItemData])
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message)
+      }
 
-      setIsOpen(false);
-      window.location.reload();
+      toast({
+        title: "Success",
+        description: "Menu item has been added successfully",
+      })
+      setIsOpen(false)
+      window.location.reload()
     } catch (error) {
-      console.error('Error adding menu item:', error);
-      alert('Error adding menu item. Please try again.');
+      console.error('Error adding menu item:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to add menu item',
+        variant: "destructive",
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
-
-  const handleNext = () => {
-    if (currentStep < TOTAL_STEPS) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -216,7 +350,7 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                   onValueChange={setSelectedRestaurant}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={cn(errors.restaurant && "border-red-500")}>
                     <SelectValue placeholder="Select a restaurant" />
                   </SelectTrigger>
                   <SelectContent>
@@ -227,33 +361,75 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.restaurant && (
+                  <p className="text-sm text-red-500">Please select a restaurant</p>
+                )}
               </div>
             )}
 
             <div className="grid gap-2">
               <Label htmlFor="name">Name *</Label>
-              <Input id="name" name="name" required />
+              <Input 
+                id="name" 
+                name="name" 
+                required 
+                className={cn(errors.name && "border-red-500")}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">Name is required</p>
+              )}
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="description">Description *</Label>
-              <Textarea id="description" name="description" required />
+              <Textarea 
+                id="description" 
+                name="description" 
+                required 
+                className={cn(errors.description && "border-red-500")}
+              />
+              {errors.description && (
+                <p className="text-sm text-red-500">Description is required</p>
+              )}
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="price">Price *</Label>
-              <Input id="price" name="price" type="number" step="0.01" required />
+              <Input 
+                id="price" 
+                name="price" 
+                type="number" 
+                step="0.01" 
+                required 
+                className={cn(errors.price && "border-red-500")}
+              />
+              {errors.price && (
+                <p className="text-sm text-red-500">Please enter a valid price greater than 0</p>
+              )}
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="category">Category *</Label>
-              <Input id="category" name="category" required />
+              <Input 
+                id="category" 
+                name="category" 
+                required 
+                className={cn(errors.category && "border-red-500")}
+              />
+              {errors.category && (
+                <p className="text-sm text-red-500">Category is required</p>
+              )}
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="type">Type *</Label>
-              <Select name="type" required>
-                <SelectTrigger>
+              <Select 
+                value={selectedType} 
+                onValueChange={setSelectedType}
+                name="type" 
+                required
+              >
+                <SelectTrigger className={cn(errors.type && "border-red-500")}>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,6 +440,9 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.type && (
+                <p className="text-sm text-red-500">Please select a type</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -273,7 +452,16 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
 
             <div className="grid gap-2">
               <Label htmlFor="preparation_time">Preparation Time (minutes) *</Label>
-              <Input id="preparation_time" name="preparation_time" type="number" required />
+              <Input 
+                id="preparation_time" 
+                name="preparation_time" 
+                type="number" 
+                required 
+                className={cn(errors.preparation_time && "border-red-500")}
+              />
+              {errors.preparation_time && (
+                <p className="text-sm text-red-500">Please enter a valid preparation time</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -287,7 +475,7 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
         return (
           <div className="space-y-4">
             <div className="grid gap-2">
-              <Label>Available Days</Label>
+              <Label className={cn(errors.days && "text-red-500")}>Available Days *</Label>
               <div className="flex flex-wrap gap-2">
                 {DAYS.map((day) => (
                   <div key={day} className="flex items-center space-x-2">
@@ -296,10 +484,13 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                   </div>
                 ))}
               </div>
+              {errors.days && (
+                <p className="text-sm text-red-500">Please select at least one day</p>
+              )}
             </div>
 
             <div className="grid gap-2">
-              <Label>Available Times</Label>
+              <Label className={cn(errors.times && "text-red-500")}>Available Times *</Label>
               <div className="flex flex-wrap gap-2">
                 {TIMES.map((time) => (
                   <div key={time} className="flex items-center space-x-2">
@@ -308,6 +499,9 @@ export function AddMenuItemForm({ restaurantId }: AddMenuItemFormProps) {
                   </div>
                 ))}
               </div>
+              {errors.times && (
+                <p className="text-sm text-red-500">Please select at least one time</p>
+              )}
             </div>
           </div>
         );
