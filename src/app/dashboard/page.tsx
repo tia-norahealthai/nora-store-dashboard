@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import { AddMenuItemForm } from "@/components/add-menu-item-form"
+import { AddMenuItem } from "@/components/add-menu-item"
 import { redirect } from 'next/navigation'
 import DashboardClient from "@/components/dashboard-client"
 

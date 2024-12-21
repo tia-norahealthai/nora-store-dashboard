@@ -101,18 +101,23 @@ export function AddMenuItem({ restaurantId, onSkip, isDialog = false }: AddMenuI
           setError('Please enter the item name')
           return
         }
+        if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+          setError('Please enter a valid price')
+          return
+        }
+        if (!type) {
+          setError('Please select a type')
+          return
+        }
+        if (!category) {
+          setError('Please select a category')
+          return
+        }
         setCurrentStep('details')
         break
       case 'details':
         if (!description.trim()) {
           setError('Please enter the item description')
-          return
-        }
-        setCurrentStep('pricing')
-        break
-      case 'pricing':
-        if (!price.trim() || isNaN(parseFloat(price))) {
-          setError('Please enter a valid price')
           return
         }
         handleSubmit()
@@ -298,6 +303,28 @@ export function AddMenuItem({ restaurantId, onSkip, isDialog = false }: AddMenuI
                   disabled={isLoading}
                   className="pl-9"
                   placeholder="e.g., Margherita Pizza"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">
+                Price
+                <RequiredIndicator />
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="pl-9"
+                  placeholder="0.00"
                 />
               </div>
             </div>
@@ -647,28 +674,6 @@ export function AddMenuItem({ restaurantId, onSkip, isDialog = false }: AddMenuI
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="price">
-                Price
-                <RequiredIndicator />
-              </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-70" />
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="pl-9"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="average_rating">
                 Average Rating (0-5)
               </Label>
@@ -797,6 +802,9 @@ export function AddMenuItem({ restaurantId, onSkip, isDialog = false }: AddMenuI
           <Button>Add Menu Item</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Menu Item</DialogTitle>
+          </DialogHeader>
           {content}
         </DialogContent>
       </Dialog>

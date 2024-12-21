@@ -31,7 +31,7 @@ import {
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { AddFirstMenuItem } from '@/components/add-first-menu-item'
+import { AddMenuItem } from '@/components/add-menu-item'
 
 interface BusinessHours {
   [key: string]: {
@@ -445,7 +445,7 @@ export default function OnboardingPage() {
             </header>
             <div className="flex-1 overflow-auto">
               <div className="flex flex-col gap-4 p-4 pt-0">
-                <AddFirstMenuItem
+                <AddMenuItem
                   restaurantId={restaurantId!}
                   onSkip={handleSkipMenuItemForm}
                 />
@@ -479,7 +479,7 @@ export default function OnboardingPage() {
           <div className="flex-1 overflow-auto">
             <div className="flex flex-col gap-4 p-4 pt-0">
               {showMenuItemForm ? (
-                <AddFirstMenuItem
+                <AddMenuItem
                   restaurantId={restaurantId!}
                   onSkip={handleSkipMenuItemForm}
                 />

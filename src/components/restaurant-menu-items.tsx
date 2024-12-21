@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { db } from "@/lib/supabase/db"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AddMenuItemForm } from "@/components/add-menu-item-form"
+import { AddMenuItem } from "@/components/add-menu-item"
 import { Loader2 } from "lucide-react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
@@ -68,7 +68,7 @@ export function RestaurantMenuItems({ restaurantId }: RestaurantMenuItemsProps) 
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Menu Items ({menuItems.length})</h3>
-        <AddMenuItemForm restaurantId={restaurantId} />
+        <AddMenuItem restaurantId={restaurantId} isDialog />
       </div>
       
       {menuItems.length === 0 ? (

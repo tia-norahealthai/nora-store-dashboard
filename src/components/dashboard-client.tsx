@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { AddFirstMenuItem } from "@/components/add-first-menu-item"
+import { AddMenuItem } from "@/components/add-menu-item"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -182,7 +182,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </header>
           <div className="flex-1 overflow-auto">
             <div className="flex flex-col gap-4 p-4 pt-0">
-              <AddFirstMenuItem 
+              <AddMenuItem 
                 restaurantId={restaurant.id} 
                 onSkip={handleSkip}
               />

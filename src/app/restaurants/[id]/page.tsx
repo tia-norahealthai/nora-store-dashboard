@@ -21,7 +21,7 @@ import { db } from "@/lib/supabase/db"
 import { notFound } from "next/navigation"
 import { Store, Clock, MapPin, Globe, Mail, Phone, Receipt, DollarSign, Calculator } from "lucide-react"
 import { MenuItems } from "@/components/menu-items"
-import { AddMenuItemForm } from "@/components/add-menu-item-form"
+import { AddMenuItem } from "@/components/add-menu-item"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Users } from "lucide-react"
@@ -321,7 +321,7 @@ export default async function RestaurantPage({ params }: { params: { id: string 
               <div className="space-y-4 md:col-span-2">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Menu Items</h2>
-                  <AddMenuItemForm restaurantId={restaurantData.id} />
+                  <AddMenuItem restaurantId={restaurantData.id} isDialog />
                 </div>
                 <MenuItems initialItems={menuItems || []} />
               </div>

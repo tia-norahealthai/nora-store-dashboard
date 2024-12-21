@@ -21,7 +21,7 @@ import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
 import { RestaurantHeader } from "@/components/restaurant-header"
-import { AddMenuItemForm } from "@/components/add-menu-item-form"
+import { AddMenuItem } from "@/components/add-menu-item"
 import type { Database } from '@/types/supabase'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -175,7 +175,7 @@ export default async function MenuPage() {
               <div className="flex flex-col gap-4 p-4 pt-0 w-full">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-semibold tracking-tight">Menu Items</h2>
-                  <AddMenuItemForm restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} />
+                  <AddMenuItem restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} isDialog />
                 </div>
                 <div className="text-center py-8 text-muted-foreground">
                   No menu items found. Click the "Add Menu Item" button above to create your first menu item.
@@ -213,7 +213,7 @@ export default async function MenuPage() {
             <div className="flex flex-col gap-4 p-4 pt-0 w-full">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold tracking-tight">Menu Items</h2>
-                <AddMenuItemForm restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} />
+                <AddMenuItem restaurantId={isAdmin ? undefined : (userRestaurants && userRestaurants[0]?.restaurant_id)} isDialog />
               </div>
               
               <Suspense fallback={<div>Loading menu items...</div>}>
