@@ -49,7 +49,45 @@ export default function LoginPage() {
         return
       }
 
-      // Successful login
+      // Get the user
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        // Get the user's restaurant
+        const { data: userRestaurant } = await supabase
+          .from('restaurant_users')
+          .select(`
+            restaurant:restaurants (
+              id,
+              cashback_percentage,
+              address,
+              phone,
+              business_hours
+            )
+          `)
+          .eq('user_id', user.id)
+          .single()
+
+        // Check if setup is completed
+        if (userRestaurant?.restaurant) {
+          const restaurant = userRestaurant.restaurant
+          const isSetupComplete = Boolean(
+            restaurant.address &&
+            restaurant.phone &&
+            restaurant.business_hours &&
+            restaurant.cashback_percentage !== null
+          )
+
+          if (!isSetupComplete) {
+            toast.success('Welcome back!')
+            router.push('/onboarding')
+            router.refresh()
+            return
+          }
+        }
+      }
+
+      // Successful login and setup is complete
       toast.success('Welcome back!')
       router.push('/dashboard')
       router.refresh()

@@ -75,7 +75,6 @@ export function AddRestaurantForm({ onSuccess }: { onSuccess: () => void }) {
       email: "",
       website: "",
       logo_url: "",
-      cashback_percentage: 20,
       business_hours: {
         monday: defaultBusinessHours,
         tuesday: defaultBusinessHours,

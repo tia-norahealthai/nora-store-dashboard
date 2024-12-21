@@ -127,6 +127,7 @@ export default function OnboardingPage() {
         )
 
         setIsSetupCompleted(isCompleted)
+        setShowMenuItemForm(isCompleted)
 
         // Successfully found restaurant
         setRestaurantId(restaurant.id)
@@ -136,7 +137,7 @@ export default function OnboardingPage() {
         setEmail(restaurant.email || '')
         setWebsite(restaurant.website || '')
         setLogoUrl(restaurant.logo_url || '')
-        setCashbackPercentage(restaurant.cashback_percentage?.toString() || '5')
+        setCashbackPercentage(restaurant.cashback_percentage?.toString() || '')
         
         // Set business hours with fallback to default values
         if (restaurant.business_hours) {
